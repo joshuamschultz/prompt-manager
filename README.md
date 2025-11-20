@@ -732,6 +732,9 @@ Contributions welcome! Please ensure:
 ## Roadmap
 
 - [ ] Additional plugin implementations (OpenAI, Anthropic, LangChain)
+- [ ] Security Features
+- [ ] Auto loading yamls
+- [ ] Optional storage
 - [ ] Redis cache backend
 - [ ] PostgreSQL storage backend
 - [ ] A/B testing framework
