@@ -1,0 +1,53 @@
+{
+  "id": "code_review",
+  "version": "1.0.0",
+  "uid": "d16e3b79-13a2-4fda-b40a-4aa5c40e71b5",
+  "format": "chat",
+  "template": null,
+  "chat_template": {
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are an expert code reviewer. Analyze the provided code for:\n- Security vulnerabilities\n- Performance issues\n- Code quality and best practices\n- Potential bugs\n- Maintainability concerns\n\nProvide constructive feedback with specific suggestions for improvement.\n",
+        "name": null,
+        "function_call": null,
+        "tool_calls": null
+      },
+      {
+        "role": "user",
+        "content": "Review this {{language}} code:\n\n```{{language}}\n{{code}}\n```\n\nFocus areas: {{focus_areas}}\n",
+        "name": null,
+        "function_call": null,
+        "tool_calls": null
+      }
+    ],
+    "variables": [
+      "language",
+      "code",
+      "focus_areas"
+    ]
+  },
+  "status": "active",
+  "created_at": "2025-11-20T02:56:06.130413",
+  "updated_at": "2025-11-20T02:56:06.130419",
+  "metadata": {
+    "author": "Engineering Team",
+    "description": "AI-assisted code review",
+    "tags": [
+      "code-review",
+      "engineering",
+      "quality"
+    ],
+    "category": "development",
+    "use_cases": [],
+    "model_recommendations": [
+      "gpt-4",
+      "claude-3-opus"
+    ],
+    "temperature": 0.3,
+    "max_tokens": 4000,
+    "custom": {}
+  },
+  "input_schema": "code_review_input",
+  "output_schema": null
+}

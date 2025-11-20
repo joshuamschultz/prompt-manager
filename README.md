@@ -731,15 +731,25 @@ Contributions welcome! Please ensure:
 
 ## Roadmap
 
-- [ ] Additional plugin implementations (OpenAI, Anthropic, LangChain)
+### Completed ✅
+- [x] Auto loading YAML files from directory
+- [x] Optional storage with sensible defaults
+- [x] Additional plugin implementations (OpenAI, Anthropic, LangChain, LiteLLM)
+
+### Planned Features
+- [ ] **Synchronous API wrapper** - Simple sync interface for basic use cases that don't need async/await
 - [ ] Security Features
-- [ ] Auto loading yamls
-- [ ] Optional storage
-- [ ] Redis cache backend
-- [ ] PostgreSQL storage backend
-- [ ] A/B testing framework
-- [ ] Prompt analytics dashboard
-- [ ] CLI tool for management
-- [ ] REST API server
-- [ ] Performance optimizations
-- [ ] Advanced templating features
+  - [ ] Prompt access control / permissions
+  - [ ] Audit logging for prompt changes
+  - [ ] Secret scanning in prompts
+- [ ] Storage Backends
+  - [ ] Redis cache backend
+  - [ ] PostgreSQL storage backend
+  - [ ] S3/cloud storage backend
+- [ ] Advanced Features
+  - [ ] A/B testing framework for prompt variants
+  - [ ] Prompt analytics dashboard
+  - [ ] CLI tool for prompt management
+  - [ ] REST API server
+  - [ ] Performance optimizations (lazy loading, caching improvements)
+  - [ ] Advanced templating features (conditionals, loops, filters)

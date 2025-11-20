@@ -26,10 +26,8 @@ async def example_1_simple_text_prompt() -> None:
     """Example 1: Create and render a simple text prompt."""
     print("\n=== Example 1: Simple Text Prompt ===\n")
 
-    # Setup
-    storage = FileSystemStorage(Path("./data/prompts"))
-    registry = PromptRegistry(storage=storage)
-    manager = PromptManager(registry=registry)
+    # Setup - using simplified API
+    manager = await PromptManager.create(prompt_dir="./data/prompts", auto_load_yaml=False)
 
     # Create prompt
     prompt = Prompt(
@@ -63,10 +61,8 @@ async def example_2_chat_prompt() -> None:
     """Example 2: Create and render a chat-based prompt."""
     print("\n=== Example 2: Chat Prompt ===\n")
 
-    # Setup
-    storage = FileSystemStorage(Path("./data/prompts"))
-    registry = PromptRegistry(storage=storage)
-    manager = PromptManager(registry=registry)
+    # Setup - using simplified API
+    manager = await PromptManager.create(prompt_dir="./data/prompts", auto_load_yaml=False)
 
     # Create chat prompt
     prompt = Prompt(
@@ -115,11 +111,13 @@ async def example_3_versioning() -> None:
     """Example 3: Version management and history."""
     print("\n=== Example 3: Versioning ===\n")
 
-    # Setup with version store
-    storage = FileSystemStorage(Path("./data/prompts"))
-    registry = PromptRegistry(storage=storage)
+    # Setup with version store - using simplified API
     version_store = VersionStore(Path("./data/versions"))
-    manager = PromptManager(registry=registry, version_store=version_store)
+    manager = await PromptManager.create(
+        prompt_dir="./data/prompts",
+        auto_load_yaml=False,
+        version_store=version_store,
+    )
 
     # Create initial version
     prompt = Prompt(
@@ -166,14 +164,13 @@ async def example_4_observability() -> None:
     """Example 4: Observability with logging and metrics."""
     print("\n=== Example 4: Observability ===\n")
 
-    # Setup with observers
-    storage = FileSystemStorage(Path("./data/prompts"))
-    registry = PromptRegistry(storage=storage)
+    # Setup with observers - using simplified API
     metrics = MetricsCollector()
     logging_obs = LoggingObserver()
 
-    manager = PromptManager(
-        registry=registry,
+    manager = await PromptManager.create(
+        prompt_dir="./data/prompts",
+        auto_load_yaml=False,
         metrics=metrics,
         observers=[logging_obs],
     )
@@ -203,30 +200,27 @@ async def example_4_observability() -> None:
 
 
 async def example_5_yaml_import() -> None:
-    """Example 5: Load prompts from YAML."""
-    print("\n=== Example 5: YAML Import ===\n")
+    """Example 5: Automatic YAML loading from directory."""
+    print("\n=== Example 5: YAML Auto-Loading ===\n")
 
-    # Create example YAML file
-    yaml_path = Path("./data/prompts.yaml")
-    yaml_path.parent.mkdir(parents=True, exist_ok=True)
+    # Create example YAML file in prompts directory
+    yaml_dir = Path("./data/prompts")
+    yaml_dir.mkdir(parents=True, exist_ok=True)
+    yaml_path = yaml_dir / "example.yaml"
 
     if not yaml_path.exists():
         YAMLLoader.create_example_yaml(yaml_path)
         print(f"Created example YAML at {yaml_path}")
 
-    # Load from YAML
-    storage = FileSystemStorage(Path("./data/prompts"))
-    registry = PromptRegistry(storage=storage)
-    loader = YAMLLoader(registry)
+    # Use simplified API with auto-loading enabled (default)
+    # This automatically loads all YAML files from the directory!
+    manager = await PromptManager.create(prompt_dir=yaml_dir)
 
-    count = await loader.import_to_registry(yaml_path)
-    print(f"Imported {count} prompts from YAML")
-
-    # List imported prompts
-    manager = PromptManager(registry=registry)
+    # List auto-loaded prompts
     prompts = await manager.list_prompts()
 
-    print("\nImported prompts:")
+    print(f"\n✅ Auto-loaded {len(prompts)} prompts from YAML files")
+    print("\nLoaded prompts:")
     for prompt in prompts:
         print(f"  - {prompt.id} v{prompt.version}: {prompt.metadata.description}")
 
@@ -235,10 +229,8 @@ async def example_6_filtering() -> None:
     """Example 6: Filter and search prompts."""
     print("\n=== Example 6: Filtering ===\n")
 
-    # Setup
-    storage = FileSystemStorage(Path("./data/prompts"))
-    registry = PromptRegistry(storage=storage)
-    manager = PromptManager(registry=registry)
+    # Setup - using simplified API
+    manager = await PromptManager.create(prompt_dir="./data/prompts", auto_load_yaml=False)
 
     # Create multiple prompts with different tags
     prompts_data = [
@@ -280,9 +272,8 @@ async def example_7_error_handling() -> None:
         PromptValidationError,
     )
 
-    storage = FileSystemStorage(Path("./data/prompts"))
-    registry = PromptRegistry(storage=storage)
-    manager = PromptManager(registry=registry)
+    # Setup - using simplified API
+    manager = await PromptManager.create(prompt_dir="./data/prompts", auto_load_yaml=False)
 
     # Handle missing prompt
     try:
@@ -306,10 +297,8 @@ async def example_8_schema_validation() -> None:
     """Example 8: Schema validation with auto-injection."""
     print("\n=== Example 8: Schema Validation ===\n")
 
-    # Setup
-    storage = FileSystemStorage(Path("./data/prompts"))
-    registry = PromptRegistry(storage=storage)
-    manager = PromptManager(registry=registry)
+    # Setup - using simplified API
+    manager = await PromptManager.create(prompt_dir="./data/prompts", auto_load_yaml=False)
 
     # Load schemas from individual files
     schema_count = await manager.load_schemas(Path("./schemas-individual"))
@@ -369,10 +358,8 @@ async def example_9_output_validation() -> None:
     """Example 9: Validate LLM output against schema."""
     print("\n=== Example 9: Output Validation ===\n")
 
-    # Setup
-    storage = FileSystemStorage(Path("./data/prompts"))
-    registry = PromptRegistry(storage=storage)
-    manager = PromptManager(registry=registry)
+    # Setup - using simplified API
+    manager = await PromptManager.create(prompt_dir="./data/prompts", auto_load_yaml=False)
 
     # Load schemas
     await manager.load_schemas(Path("./schemas-individual"))
@@ -433,10 +420,8 @@ async def example_10_automatic_validation() -> None:
     """Example 10: Complete automatic validation flow."""
     print("\n=== Example 10: Automatic Validation (Full Flow) ===\n")
 
-    # Setup
-    storage = FileSystemStorage(Path("./data/prompts"))
-    registry = PromptRegistry(storage=storage)
-    manager = PromptManager(registry=registry)
+    # Setup - using simplified API
+    manager = await PromptManager.create(prompt_dir="./data/prompts", auto_load_yaml=False)
 
     # Load schemas
     await manager.load_schemas(Path("./schemas-individual"))

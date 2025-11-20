@@ -81,6 +81,9 @@ class SchemaLoader:
 
             return registry
 
+        except SchemaParseError:
+            # Re-raise SchemaParseError as-is
+            raise
         except yaml.YAMLError as e:
             msg = f"Invalid YAML syntax: {e}"
             raise SchemaParseError(msg, file=str(filepath)) from e

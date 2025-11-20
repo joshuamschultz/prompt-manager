@@ -44,7 +44,7 @@ class PromptManager:
 
     def __init__(
         self,
-        registry: PromptRegistry,
+        registry: PromptRegistry | None = None,
         version_store: VersionStore | None = None,
         cache: CacheProtocol | None = None,
         metrics: MetricsCollectorProtocol | None = None,
@@ -54,12 +54,19 @@ class PromptManager:
         Initialize the prompt manager.
 
         Args:
-            registry: Prompt registry for storage
+            registry: Optional prompt registry (will create default if None)
             version_store: Optional version store for history
             cache: Optional cache for rendered prompts
             metrics: Optional metrics collector
             observers: Optional list of observers
         """
+        # Create default registry if not provided
+        if registry is None:
+            from prompt_manager.storage import FileSystemStorage
+
+            default_storage = FileSystemStorage(Path("./prompts"))
+            registry = PromptRegistry(storage=default_storage)
+
         self._registry = registry
         self._version_store = version_store
         self._cache = cache
@@ -72,6 +79,97 @@ class PromptManager:
         self._schema_loader = SchemaLoader()
 
         self._logger = logger.bind(component="manager")
+
+    @classmethod
+    async def create(
+        cls,
+        prompt_dir: Path | str = "./prompts",
+        auto_load_yaml: bool = True,
+        version_store: VersionStore | None = None,
+        cache: CacheProtocol | None = None,
+        metrics: MetricsCollectorProtocol | None = None,
+        observers: list[ObserverProtocol] | None = None,
+    ) -> "PromptManager":
+        """
+        Create and initialize a PromptManager with auto-configuration.
+
+        This is the recommended way to create a PromptManager. It:
+        1. Creates storage in the specified prompt directory
+        2. Automatically loads all YAML files from that directory
+        3. Sets up all components with sensible defaults
+
+        Args:
+            prompt_dir: Directory for storing prompts (default: "./prompts")
+            auto_load_yaml: Whether to auto-load YAML files (default: True)
+            version_store: Optional version store for history
+            cache: Optional cache for rendered prompts
+            metrics: Optional metrics collector
+            observers: Optional list of observers
+
+        Returns:
+            Initialized PromptManager instance
+
+        Example:
+            >>> # Simplest usage - everything automatic
+            >>> manager = await PromptManager.create()
+            >>>
+            >>> # Custom directory
+            >>> manager = await PromptManager.create(prompt_dir="./my-prompts")
+            >>>
+            >>> # Disable auto-loading
+            >>> manager = await PromptManager.create(auto_load_yaml=False)
+        """
+        from prompt_manager.storage import FileSystemStorage, YAMLLoader
+
+        # Convert to Path if string
+        if isinstance(prompt_dir, str):
+            prompt_dir = Path(prompt_dir)
+
+        # Create storage and registry
+        storage = FileSystemStorage(prompt_dir)
+        registry = PromptRegistry(storage=storage, observers=observers)
+
+        # Create manager
+        manager = cls(
+            registry=registry,
+            version_store=version_store,
+            cache=cache,
+            metrics=metrics,
+            observers=observers,
+        )
+
+        # Auto-load YAML files if requested
+        if auto_load_yaml and prompt_dir.exists():
+            loader = YAMLLoader(registry)
+
+            # Load all .yaml and .yml files from directory
+            yaml_files = list(prompt_dir.glob("*.yaml")) + list(prompt_dir.glob("*.yml"))
+
+            total_loaded = 0
+            for yaml_file in yaml_files:
+                try:
+                    count = await loader.import_to_registry(yaml_file)
+                    total_loaded += count
+                    manager._logger.info(
+                        "yaml_loaded",
+                        file=str(yaml_file),
+                        count=count,
+                    )
+                except Exception as e:
+                    manager._logger.warning(
+                        "yaml_load_failed",
+                        file=str(yaml_file),
+                        error=str(e),
+                    )
+
+            if total_loaded > 0:
+                manager._logger.info(
+                    "yaml_loading_complete",
+                    total_prompts=total_loaded,
+                    total_files=len(yaml_files),
+                )
+
+        return manager
 
     async def render_and_parse(
         self,

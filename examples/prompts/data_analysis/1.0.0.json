@@ -1,0 +1,54 @@
+{
+  "id": "data_analysis",
+  "version": "1.0.0",
+  "uid": "5617903f-8322-4d5b-bc34-c156a0f111df",
+  "format": "chat",
+  "template": null,
+  "chat_template": {
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are an expert data analyst. Analyze the provided data and:\n- Identify patterns and trends\n- Calculate relevant statistics\n- Provide insights and recommendations\n- Suggest visualizations\n\nPresent findings clearly with supporting evidence.\n",
+        "name": null,
+        "function_call": null,
+        "tool_calls": null
+      },
+      {
+        "role": "user",
+        "content": "Analyze this {{data_type}} data:\n\n{{data}}\n\nAnalysis goals: {{goals}}\n\n{{#if context}}\nAdditional context: {{context}}\n{{/if}}\n",
+        "name": null,
+        "function_call": null,
+        "tool_calls": null
+      }
+    ],
+    "variables": [
+      "data_type",
+      "data",
+      "goals",
+      "context"
+    ]
+  },
+  "status": "active",
+  "created_at": "2025-11-20T02:56:06.147830",
+  "updated_at": "2025-11-20T02:56:06.147834",
+  "metadata": {
+    "author": "Data Team",
+    "description": "AI-powered data analysis",
+    "tags": [
+      "data-analysis",
+      "statistics",
+      "insights"
+    ],
+    "category": "analytics",
+    "use_cases": [],
+    "model_recommendations": [
+      "gpt-4",
+      "claude-3-opus"
+    ],
+    "temperature": 0.5,
+    "max_tokens": 3000,
+    "custom": {}
+  },
+  "input_schema": "data_analysis_input",
+  "output_schema": null
+}

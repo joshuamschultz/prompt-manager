@@ -1,0 +1,55 @@
+{
+  "id": "text_summarization",
+  "version": "1.0.0",
+  "uid": "94612f2c-d966-4faf-adbf-e60e695a7a30",
+  "format": "chat",
+  "template": null,
+  "chat_template": {
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are an expert at summarizing content. Create concise, accurate summaries\nthat capture the key points while maintaining the original meaning.\n",
+        "name": null,
+        "function_call": null,
+        "tool_calls": null
+      },
+      {
+        "role": "user",
+        "content": "Summarize the following {{content_type}} in {{length}} length:\n\n{{text}}\n\n{{#if focus}}\nFocus on: {{focus}}\n{{/if}}\n",
+        "name": null,
+        "function_call": null,
+        "tool_calls": null
+      }
+    ],
+    "variables": [
+      "content_type",
+      "length",
+      "text",
+      "focus"
+    ]
+  },
+  "status": "active",
+  "created_at": "2025-11-20T02:56:06.234097",
+  "updated_at": "2025-11-20T02:56:06.234103",
+  "metadata": {
+    "author": "Content Team",
+    "description": "Text summarization with length control",
+    "tags": [
+      "summarization",
+      "content",
+      "text-processing"
+    ],
+    "category": "content",
+    "use_cases": [],
+    "model_recommendations": [
+      "gpt-4",
+      "gpt-3.5-turbo",
+      "claude-3-sonnet"
+    ],
+    "temperature": 0.3,
+    "max_tokens": 1000,
+    "custom": {}
+  },
+  "input_schema": "text_summarization_input",
+  "output_schema": "text_summarization_output"
+}
