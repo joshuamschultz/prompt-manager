@@ -141,7 +141,7 @@ mypy = "^1.13.0"
 bandit = "^1.8.0"
 safety = "^3.2.0"
 pre-commit = "^4.0.0"
-ipython = "^8.30.0"
+ipython = "^9.7.0"
 rich = "^14.2.0"
 
 [tool.poetry.extras]
