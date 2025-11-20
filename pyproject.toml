@@ -55,6 +55,8 @@ exclude = [
     ".github/**",
     "scripts",
     "scripts/**",
+    "benchmark",
+    "benchmark/**",
     "Makefile",
     ".gitignore",
     ".pre-commit-config.yaml",
@@ -103,10 +105,6 @@ exclude = [
     "dist/**",
     "build",
     "build/**",
-
-    # Claude/AI development files
-    ".claude",
-    ".claude/**",
 ]
 
 [tool.poetry.dependencies]

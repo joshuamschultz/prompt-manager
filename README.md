@@ -59,20 +59,95 @@ poetry install --with dev -E all
 
 ## Quick Start
 
-### Basic Usage
+### Simplest Flow - YAML to LLM in 4 Steps
+
+The fastest way to get started - load a YAML prompt and use it with any LLM:
+
+```python
+from prompt_manager import PromptManager
+from prompt_manager.storage import YAMLLoader, InMemoryStorage
+from prompt_manager.core.registry import PromptRegistry
+from pathlib import Path
+
+# 1. Setup (one-time)
+storage = InMemoryStorage()
+registry = PromptRegistry(storage=storage)
+manager = PromptManager(registry=registry)
+
+# 2. Load prompts from YAML
+loader = YAMLLoader(registry)
+await loader.import_directory_to_registry(Path("prompts/"))
+
+# 3. Render and use with your LLM
+prompt_text = await manager.render("greeting", {
+    "name": "Alice",
+    "service": "Prompt Manager"
+})
+
+# 4. Validate output (optional)
+await manager.load_schemas(Path("schemas/"))
+validated = await manager.validate_output(
+    "user_profile",  # schema name
+    llm_response     # LLM's JSON response
+)
+```
+
+**Example YAML prompt:**
+```yaml
+# prompts/greeting.yaml
+version: "1.0.0"
+prompts:
+  - id: greeting
+    version: "1.0.0"
+    format: text
+    status: active
+    template:
+      content: "Hello {{name}}! Welcome to {{service}}."
+      variables:
+        - name
+        - service
+```
+
+### Complete Setup with Storage and Registry
+
+For production use, here's the full setup with proper imports and configuration:
 
 ```python
 from prompt_manager import PromptManager, Prompt, PromptMetadata
 from prompt_manager.core.models import PromptFormat, PromptTemplate, PromptStatus
 from prompt_manager.core.registry import PromptRegistry
-from prompt_manager.storage import InMemoryStorage
+from prompt_manager.storage import InMemoryStorage, YAMLLoader
+from pathlib import Path
 
-# Create components
-storage = InMemoryStorage()
+# Initialize storage backend
+storage = InMemoryStorage()  # or FileSystemStorage(Path("./prompts_db"))
+
+# Create registry
 registry = PromptRegistry(storage=storage)
+
+# Create manager
 manager = PromptManager(registry=registry)
 
-# Create a prompt
+# Load prompts and schemas
+loader = YAMLLoader(registry)
+await loader.import_directory_to_registry(Path("prompts/"))
+await manager.load_schemas(Path("schemas/"))
+
+# Now use the same workflow as above
+result = await manager.render("greeting", {"name": "Alice", "service": "API"})
+print(result)  # "Hello Alice! Welcome to API."
+```
+
+### Creating Prompts Programmatically
+
+Create prompts and schemas directly in Python without YAML files:
+
+**Simple Text Prompt:**
+```python
+from prompt_manager import Prompt, PromptMetadata
+from prompt_manager.core.models import PromptFormat, PromptTemplate, PromptStatus
+
+# Create a text prompt
 prompt = Prompt(
     id="greeting",
     version="1.0.0",
@@ -89,22 +164,20 @@ prompt = Prompt(
     ),
 )
 
-# Register prompt
+# Register and use
 await manager.create_prompt(prompt)
-
-# Render prompt
-result = await manager.render(
-    "greeting",
-    {"name": "Alice", "service": "Prompt Manager"},
-)
+result = await manager.render("greeting", {
+    "name": "Alice",
+    "service": "Prompt Manager"
+})
 print(result)  # "Hello Alice! Welcome to Prompt Manager."
 ```
 
-### Chat Prompts
-
+**Chat Prompt:**
 ```python
 from prompt_manager.core.models import ChatPromptTemplate, Message, Role
 
+# Create a chat prompt with multiple messages
 chat_prompt = Prompt(
     id="customer_support",
     version="1.0.0",
@@ -123,16 +196,66 @@ chat_prompt = Prompt(
         ],
         variables=["company", "user_query"],
     ),
+    metadata=PromptMetadata(
+        description="Customer support chatbot",
+        tags=["support", "chat"],
+    ),
 )
 
 await manager.create_prompt(chat_prompt)
 ```
 
-### Loading from YAML
+**Creating Schemas Programmatically:**
+```python
+from prompt_manager.validation.models import (
+    ValidationSchema,
+    SchemaField,
+    FieldValidator,
+)
+
+# Define validation schema in code
+user_schema = ValidationSchema(
+    name="user_input",
+    version="1.0.0",
+    description="User input validation",
+    strict=True,
+    fields=[
+        SchemaField(
+            name="username",
+            type="string",
+            required=True,
+            validators=[
+                FieldValidator(type="min_length", min_value=3),
+                FieldValidator(
+                    type="regex",
+                    pattern="^[a-zA-Z0-9_]+$",
+                    error_message="Username must be alphanumeric"
+                ),
+            ],
+        ),
+        SchemaField(
+            name="email",
+            type="string",
+            required=True,
+            validators=[FieldValidator(type="email")],
+        ),
+    ],
+)
+
+# Register schema
+await manager.register_schema(user_schema)
+
+# Use in prompt
+prompt.input_schema = "user_input"
+```
+
+## Advanced Features
+
+### YAML File Organization
 
 **Individual Files (Recommended):**
 
-Each prompt and schema in its own file for better organization:
+Organize prompts and schemas in separate files for better maintainability:
 
 ```
 project/
@@ -146,21 +269,7 @@ project/
     └── text_summarization_output.yaml
 ```
 
-```python
-from prompt_manager import PromptManager
-from prompt_manager.storage import YAMLLoader
-from pathlib import Path
-
-# Load prompts from directory
-loader = YAMLLoader(registry)
-await loader.import_directory_to_registry(Path("prompts/"))
-
-# Load schemas for validation
-manager = PromptManager(registry=registry)
-await manager.load_schemas(Path("schemas/"))
-```
-
-**Single File Format:**
+**YAML Prompt Example:**
 
 ```yaml
 # prompts/greeting.yaml
@@ -177,12 +286,85 @@ prompts:
         - service
     metadata:
       author: System
+      description: "Simple greeting prompt"
       tags:
         - greeting
     input_schema: "user_input"  # Optional validation
+    output_schema: "user_profile"  # Optional validation
 ```
 
+**YAML Schema Example:**
+
+```yaml
+# schemas/user_input.yaml
+version: "1.0.0"
+metadata:
+  description: "User input validation schema"
+  author: "Team"
+schemas:
+  - name: "user_input"
+    version: "1.0.0"
+    description: "Validation for user input variables"
+    strict: true
+    fields:
+      - name: "username"
+        type: "string"
+        required: true
+        validators:
+          - type: "min_length"
+            min_value: 3
+          - type: "regex"
+            pattern: "^[a-zA-Z0-9_]+$"
+            error_message: "Username must be alphanumeric"
+      - name: "email"
+        type: "string"
+        required: true
+        validators:
+          - type: "email"
+      - name: "age"
+        type: "integer"
+        required: false
+        validators:
+          - type: "range"
+            min_value: 13
+            max_value: 120
+```
+
+### Schema Validation
+
+Automatically validate input/output data with YAML or programmatic schemas.
+
+```python
+# Setup once
+await manager.load_schemas(Path("schemas/"))
+
+# Render with automatic input validation
+prompt_text = await manager.render("user_onboarding", {
+    "username": "john_doe",  # Validated against input_schema
+    "email": "john@example.com"
+})
+
+# After LLM responds, validate output
+llm_response = {"user_id": 123, "status": "active"}
+try:
+    validated = await manager.validate_output(
+        "user_profile",  # output schema name
+        llm_response
+    )
+    print(f"Validated: {validated}")
+except SchemaValidationError as e:
+    print(f"Validation failed: {e}")
+```
+
+**Supported Field Types:** `string`, `integer`, `float`, `boolean`, `list`, `dict`, `enum`, `any`
+
+**Supported Validators:** `min_length`, `max_length`, `range`, `regex`, `enum`, `email`, `url`, `uuid`, `date`, `datetime`, `custom`
+
+See [validation README](src/prompt_manager/validation/README.md) for complete documentation.
+
 ### Versioning
+
+Track prompt changes with automatic version management:
 
 ```python
 # Create initial version
@@ -203,181 +385,9 @@ for version in history:
     print(f"{version.version}: {version.changelog}")
 ```
 
-### Schema Validation
-
-Validate input and output data with YAML-defined schemas. Schemas are automatically injected into prompts during rendering.
-
-**Individual Schema Files (Recommended):**
-
-```yaml
-# schemas/user_input.yaml
-version: "1.0.0"
-metadata:
-  description: "User input validation schema"
-  author: "Team"
-schemas:
-  - name: "user_input"
-    version: "1.0.0"
-    description: "Validation for user input variables"
-    strict: true
-
-    fields:
-      - name: "username"
-        type: "string"
-        required: true
-        validators:
-          - type: "min_length"
-            min_value: 3
-          - type: "regex"
-            pattern: "^[a-zA-Z0-9_]+$"
-            error_message: "Username must be alphanumeric"
-
-      - name: "email"
-        type: "string"
-        required: true
-        validators:
-          - type: "email"
-
-      - name: "age"
-        type: "integer"
-        required: false
-        validators:
-          - type: "range"
-            min_value: 13
-            max_value: 120
-```
-
-**Auto-Injection with Prompts:**
-
-```python
-from prompt_manager import PromptManager
-
-# Load schemas (loads all YAML files in directory)
-manager = PromptManager(registry=registry)
-await manager.load_schemas(Path("schemas/"))
-
-# Create prompt with schema reference
-prompt = Prompt(
-    id="user_onboarding",
-    format=PromptFormat.TEXT,
-    template=PromptTemplate(content="Welcome {{username}}!"),
-    input_schema="user_input",  # Auto-injected during render
-    output_schema="user_profile"  # Auto-injected during render
-)
-
-# Render - schema descriptions automatically added
-result = await manager.render("user_onboarding", {"username": "john_doe"})
-
-# Result includes:
-# 1. Input schema description (intro)
-# 2. Main prompt content
-# 3. Output schema description (ending)
-```
-
-**Validating LLM Output:**
-
-```python
-# After getting LLM response, validate it
-llm_response = {
-    "summary": "Brief summary of the content",
-    "key_points": ["Point 1", "Point 2"],
-    "word_count": 25
-}
-
-try:
-    # Validate against output schema
-    validated = await manager.validate_output(
-        "text_summarization_output",
-        llm_response
-    )
-    # Use validated data safely
-    print(f"Summary: {validated['summary']}")
-
-except SchemaValidationError as e:
-    print(f"LLM returned invalid format: {e}")
-    # Handle validation error (retry, log, etc.)
-```
-
-**Complete Automatic Workflow (Recommended):**
-
-```python
-# ═══════════════════════════════════════════════════════════
-# ONE-TIME SETUP
-# ═══════════════════════════════════════════════════════════
-
-# Load schemas once at startup
-manager = PromptManager(registry=registry)
-await manager.load_schemas(Path("schemas/"))
-
-# Define prompt in YAML with schemas
-# prompts/summarizer.yaml:
-#   input_schema: "text_summarization_input"   # Auto-validates input
-#   output_schema: "text_summarization_output" # Auto-validates output
-
-# ═══════════════════════════════════════════════════════════
-# PER-REQUEST FLOW (Automatic Validation!)
-# ═══════════════════════════════════════════════════════════
-
-# 1. Render prompt (INPUT AUTO-VALIDATED)
-prompt_text = await manager.render("summarizer", {
-    "content_type": "article",
-    "text": "Your content here..."
-})
-# ✅ Input validated automatically
-# ✅ Output schema injected as JSON format instructions
-
-# 2. Send to LLM
-llm_response = await openai_client.generate(prompt_text)
-
-# 3. Parse and validate output (OUTPUT AUTO-VALIDATED)
-try:
-    validated = await manager.render_and_parse(
-        "summarizer",
-        input_vars,
-        llm_response  # Can be dict or JSON string
-    )
-    # ✅ Output validated automatically
-    # Use validated data with confidence!
-
-except SchemaValidationError as e:
-    # Handle validation errors gracefully
-    logger.error(f"Validation failed: {e}")
-```
-
-**What Happens Automatically:**
-
-1. **Input Validation**: `render()` validates input against `input_schema` before rendering
-2. **Schema Injection**: Output schema is injected with JSON format instructions
-3. **Output Validation**: `render_and_parse()` validates LLM response against `output_schema`
-4. **Type Safety**: All data is validated against your schemas
-
-**Supported Field Types:**
-- `string`, `integer`, `float`, `boolean`
-- `list` (with `item_type` or `item_schema`)
-- `dict` (with `nested_schema`)
-- `enum` (with `allowed_values`)
-- `any` (no type checking)
-
-**Supported Validators:**
-- `min_length`, `max_length` - String/list length
-- `range` - Numeric min/max
-- `regex` - Pattern matching
-- `enum` - Choice validation
-- `email`, `url`, `uuid` - Format validation
-- `date`, `datetime` - Date/time parsing
-- `custom` - Custom validator functions
-
-**Schema Features:**
-- Required/optional fields with `required: true/false`
-- Default values with `default: value`
-- Nullable fields with `nullable: true`
-- Nested schemas for complex objects
-- List validation with item types
-- Custom error messages per validator
-
-See [validation README](src/prompt_manager/validation/README.md) for complete documentation.
-
 ### Observability
+
+Add logging, metrics, and tracing:
 
 ```python
 from prompt_manager.observability import (
@@ -387,25 +397,14 @@ from prompt_manager.observability import (
 )
 
 # Add observers
-logging_observer = LoggingObserver()
-metrics_collector = MetricsCollector()
-otel_observer = OpenTelemetryObserver()
-
-manager.add_observer(logging_observer)
-manager.add_observer(otel_observer)
-
-# Create manager with metrics
-manager = PromptManager(
-    registry=registry,
-    metrics=metrics_collector,
-)
+manager.add_observer(LoggingObserver())
+manager.add_observer(OpenTelemetryObserver())
 
 # Get metrics
 metrics = await manager.get_metrics()
-print(metrics)
 ```
 
-## Framework Integration Examples
+## Framework Integrations
 
 ### OpenAI SDK
 
