@@ -3,8 +3,8 @@
 [![PyPI version](https://badge.fury.io/py/prompt-manager.svg)](https://badge.fury.io/py/prompt-manager)
 [![Python Version](https://img.shields.io/pypi/pyversions/prompt-manager.svg)](https://pypi.org/project/prompt-manager/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/yourusername/prompt-manager/test.yml?branch=main)](https://github.com/yourusername/prompt-manager/actions)
-[![Coverage](https://img.shields.io/codecov/c/github/yourusername/prompt-manager)](https://codecov.io/gh/yourusername/prompt-manager)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/joshuamschultz/prompt-manager/test.yml?branch=master)](https://github.com/joshuamschultz/prompt-manager/actions)
+[![Coverage](https://img.shields.io/codecov/c/github/joshuamschultz/prompt-manager)](https://codecov.io/gh/joshuamschultz/prompt-manager)
 
 A modern, production-ready Python 3.11+ prompt management system with Pydantic v2 validation, YAML schema support, Handlebars templating, plugin architecture, and comprehensive observability.
 
