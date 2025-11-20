@@ -81,3 +81,8 @@ tmp/
 # OS
 .DS_Store
 Thumbs.db
+
+# Benchmarks and misc
+.benchmarks/
+.claude/
+etc/
