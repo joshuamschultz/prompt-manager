@@ -1,0 +1,67 @@
+version: 2
+updates:
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "joshschultz"
+    assignees:
+      - "joshschultz"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "python"
+    # Group dependency updates
+    groups:
+      pydantic:
+        patterns:
+          - "pydantic*"
+      opentelemetry:
+        patterns:
+          - "opentelemetry*"
+      testing:
+        patterns:
+          - "pytest*"
+          - "hypothesis"
+      linting:
+        patterns:
+          - "ruff"
+          - "black"
+          - "mypy"
+      security:
+        patterns:
+          - "bandit"
+          - "safety"
+      framework-integrations:
+        patterns:
+          - "openai"
+          - "anthropic"
+          - "langchain*"
+          - "litellm"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "joshschultz"
+    assignees:
+      - "joshschultz"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"

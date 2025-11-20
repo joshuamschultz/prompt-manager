@@ -1,0 +1,91 @@
+# Blog Post Schema
+# Blog post with rich metadata and flexible validation
+
+version: "1.0.0"
+
+metadata:
+  description: "Blog post schema with rich metadata"
+  author: "Prompt Manager Team"
+  created: "2024-11-19"
+
+schemas:
+  - name: "blog_post"
+    version: "1.0.0"
+    description: "Blog post with rich metadata"
+    strict: false  # Allow extra fields
+
+    fields:
+      - name: "title"
+        type: "string"
+        required: true
+        description: "Post title"
+        validators:
+          - type: "min_length"
+            min_value: 5
+          - type: "max_length"
+            max_value: 200
+
+      - name: "slug"
+        type: "string"
+        required: true
+        description: "URL-friendly slug"
+        validators:
+          - type: "regex"
+            pattern: "^[a-z0-9-]+$"
+            error_message: "Slug must be lowercase letters, numbers, and hyphens"
+
+      - name: "content"
+        type: "string"
+        required: true
+        description: "Post content (markdown)"
+        validators:
+          - type: "min_length"
+            min_value: 100
+
+      - name: "excerpt"
+        type: "string"
+        required: false
+        nullable: true
+        description: "Short excerpt"
+        validators:
+          - type: "max_length"
+            max_value: 500
+
+      - name: "author"
+        type: "string"
+        required: true
+        description: "Author username"
+
+      - name: "status"
+        type: "enum"
+        required: true
+        default: "draft"
+        description: "Publication status"
+        validators:
+          - type: "enum"
+            allowed_values: ["draft", "published", "archived"]
+
+      - name: "tags"
+        type: "list"
+        item_type: "string"
+        required: false
+        default: []
+        description: "Post tags"
+        validators:
+          - type: "max_length"
+            max_value: 10
+
+      - name: "published_at"
+        type: "string"
+        required: false
+        nullable: true
+        description: "Publication date (ISO 8601)"
+        validators:
+          - type: "datetime"
+
+      - name: "view_count"
+        type: "integer"
+        required: false
+        default: 0
+        read_only: true
+        description: "Number of views"

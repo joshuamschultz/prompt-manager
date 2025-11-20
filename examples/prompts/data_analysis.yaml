@@ -1,0 +1,54 @@
+# Data Analysis Prompt
+# AI-powered data analysis assistant
+
+version: "1.0.0"
+prompts:
+  - id: "data_analysis"
+    version: "1.0.0"
+    format: "chat"
+    status: "active"
+
+    chat_template:
+      messages:
+        - role: "system"
+          content: |
+            You are an expert data analyst. Analyze the provided data and:
+            - Identify patterns and trends
+            - Calculate relevant statistics
+            - Provide insights and recommendations
+            - Suggest visualizations
+
+            Present findings clearly with supporting evidence.
+        - role: "user"
+          content: |
+            Analyze this {{data_type}} data:
+
+            {{data}}
+
+            Analysis goals: {{goals}}
+
+            {{#if context}}
+            Additional context: {{context}}
+            {{/if}}
+      variables:
+        - data_type
+        - data
+        - goals
+        - context
+
+    metadata:
+      author: "Data Team"
+      description: "AI-powered data analysis"
+      tags:
+        - data-analysis
+        - statistics
+        - insights
+      category: "analytics"
+      model_recommendations:
+        - "gpt-4"
+        - "claude-3-opus"
+      temperature: 0.5
+      max_tokens: 3000
+
+    # Input validation schema
+    input_schema: "data_analysis_input"

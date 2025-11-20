@@ -1,0 +1,59 @@
+# Address Schema
+# Physical address validation (for nested schema examples)
+
+version: "1.0.0"
+
+metadata:
+  description: "Physical address schema"
+  author: "Prompt Manager Team"
+  created: "2024-11-19"
+
+schemas:
+  - name: "address"
+    version: "1.0.0"
+    description: "Physical address"
+    strict: true
+
+    fields:
+      - name: "street"
+        type: "string"
+        required: true
+        description: "Street address"
+        validators:
+          - type: "min_length"
+            min_value: 5
+
+      - name: "city"
+        type: "string"
+        required: true
+        description: "City name"
+        validators:
+          - type: "min_length"
+            min_value: 2
+
+      - name: "state"
+        type: "string"
+        required: true
+        description: "State or province"
+        validators:
+          - type: "regex"
+            pattern: "^[A-Z]{2}$"
+            error_message: "State must be 2-letter code (e.g., CA)"
+
+      - name: "postal_code"
+        type: "string"
+        required: true
+        description: "Postal/ZIP code"
+        validators:
+          - type: "regex"
+            pattern: "^\\d{5}(-\\d{4})?$"
+            error_message: "Invalid ZIP code format"
+
+      - name: "country"
+        type: "string"
+        required: false
+        default: "US"
+        description: "Country code"
+        validators:
+          - type: "regex"
+            pattern: "^[A-Z]{2}$"

@@ -1,0 +1,51 @@
+# Text Summarization Prompt
+# Summarize long-form content with customizable length
+
+version: "1.0.0"
+prompts:
+  - id: "text_summarization"
+    version: "1.0.0"
+    format: "chat"
+    status: "active"
+
+    chat_template:
+      messages:
+        - role: "system"
+          content: |
+            You are an expert at summarizing content. Create concise, accurate summaries
+            that capture the key points while maintaining the original meaning.
+        - role: "user"
+          content: |
+            Summarize the following {{content_type}} in {{length}} length:
+
+            {{text}}
+
+            {{#if focus}}
+            Focus on: {{focus}}
+            {{/if}}
+      variables:
+        - content_type
+        - length
+        - text
+        - focus
+
+    metadata:
+      author: "Content Team"
+      description: "Text summarization with length control"
+      tags:
+        - summarization
+        - content
+        - text-processing
+      category: "content"
+      model_recommendations:
+        - "gpt-4"
+        - "gpt-3.5-turbo"
+        - "claude-3-sonnet"
+      temperature: 0.3
+      max_tokens: 1000
+
+    # Input validation schema
+    input_schema: "text_summarization_input"
+
+    # Output validation schema
+    output_schema: "text_summarization_output"

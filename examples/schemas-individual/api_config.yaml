@@ -1,0 +1,69 @@
+# API Configuration Schema
+# API endpoint configuration with validation
+
+version: "1.0.0"
+
+metadata:
+  description: "API endpoint configuration schema"
+  author: "Prompt Manager Team"
+  created: "2024-11-19"
+
+schemas:
+  - name: "api_config"
+    version: "1.0.0"
+    description: "API endpoint configuration"
+    strict: true
+
+    fields:
+      - name: "endpoint"
+        type: "string"
+        required: true
+        description: "API endpoint URL"
+        validators:
+          - type: "url"
+            error_message: "Invalid URL format"
+
+      - name: "api_key"
+        type: "string"
+        required: true
+        write_only: true
+        description: "API authentication key"
+        validators:
+          - type: "min_length"
+            min_value: 32
+
+      - name: "timeout"
+        type: "integer"
+        required: false
+        default: 30
+        description: "Request timeout in seconds"
+        validators:
+          - type: "range"
+            min_value: 1
+            max_value: 300
+
+      - name: "retry_count"
+        type: "integer"
+        required: false
+        default: 3
+        description: "Number of retry attempts"
+        validators:
+          - type: "range"
+            min_value: 0
+            max_value: 10
+
+      - name: "retry_delay"
+        type: "float"
+        required: false
+        default: 1.0
+        description: "Delay between retries in seconds"
+        validators:
+          - type: "range"
+            min_value: 0.1
+            max_value: 60.0
+
+      - name: "headers"
+        type: "dict"
+        required: false
+        default: {}
+        description: "Custom HTTP headers"

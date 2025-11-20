@@ -1,0 +1,33 @@
+# Customer Support Prompt
+# Chat-based customer support assistant
+
+version: "1.0.0"
+prompts:
+  - id: "customer_support"
+    version: "1.0.0"
+    format: "chat"
+    status: "active"
+
+    chat_template:
+      messages:
+        - role: "system"
+          content: "You are a helpful customer support agent for {{company}}. Be professional and empathetic."
+        - role: "user"
+          content: "{{customer_query}}"
+      variables:
+        - company
+        - customer_query
+
+    metadata:
+      author: "Support Team"
+      description: "Customer support chat template"
+      tags:
+        - support
+        - chat
+      category: "customer-service"
+      model_recommendations:
+        - "gpt-4"
+        - "claude-3-opus"
+        - "claude-3-sonnet"
+      temperature: 0.7
+      max_tokens: 2000

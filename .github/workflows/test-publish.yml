@@ -1,0 +1,78 @@
+name: Publish to TestPyPI
+
+on:
+  push:
+    tags:
+      - '*rc*'
+      - '*beta*'
+      - '*alpha*'
+  workflow_dispatch:
+
+jobs:
+  test-publish:
+    name: Build and Publish to TestPyPI
+    runs-on: ubuntu-latest
+    environment: test
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.8.0
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dependencies
+        run: poetry install --no-interaction --with dev -E all
+
+      - name: Run tests
+        run: |
+          poetry run pytest tests/ -v --cov=prompt_manager --cov-report=term
+
+      - name: Run quality checks
+        run: |
+          poetry run ruff check src/ tests/
+          poetry run black --check src/ tests/
+          poetry run mypy src/prompt_manager
+
+      - name: Build package
+        run: poetry build
+
+      - name: Validate package
+        run: |
+          poetry run pip install --no-deps dist/*.whl
+          poetry run python -c "import prompt_manager; print(f'Version: {prompt_manager.__version__}')"
+
+      - name: Configure TestPyPI repository
+        run: poetry config repositories.testpypi https://test.pypi.org/legacy/
+
+      - name: Publish to TestPyPI
+        env:
+          POETRY_PYPI_TOKEN_TESTPYPI: ${{ secrets.TEST_PYPI_TOKEN }}
+        run: poetry publish -r testpypi --no-interaction
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-test
+          path: dist/
+
+      - name: Create test installation instructions
+        run: |
+          echo "## Test Installation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Install from TestPyPI:" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          echo "pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ prompt-manager" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

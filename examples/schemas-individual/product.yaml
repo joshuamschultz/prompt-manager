@@ -1,0 +1,85 @@
+# Product Schema
+# Product catalog item with validation
+
+version: "1.0.0"
+
+metadata:
+  description: "Product catalog item schema"
+  author: "Prompt Manager Team"
+  created: "2024-11-19"
+
+schemas:
+  - name: "product"
+    version: "1.0.0"
+    description: "Product catalog item"
+    strict: true
+
+    fields:
+      - name: "name"
+        type: "string"
+        required: true
+        description: "Product name"
+        validators:
+          - type: "min_length"
+            min_value: 3
+          - type: "max_length"
+            max_value: 100
+
+      - name: "sku"
+        type: "string"
+        required: true
+        description: "Stock Keeping Unit identifier"
+        validators:
+          - type: "regex"
+            pattern: "^[A-Z]{3}-\\d{6}$"
+            error_message: "SKU must be in format XXX-123456"
+
+      - name: "price"
+        type: "float"
+        required: true
+        description: "Product price in USD"
+        validators:
+          - type: "range"
+            min_value: 0.01
+            max_value: 999999.99
+            error_message: "Price must be between $0.01 and $999,999.99"
+
+      - name: "quantity"
+        type: "integer"
+        required: true
+        default: 0
+        description: "Available quantity in stock"
+        validators:
+          - type: "min_value"
+            min_value: 0
+            error_message: "Quantity cannot be negative"
+
+      - name: "category"
+        type: "enum"
+        required: true
+        description: "Product category"
+        validators:
+          - type: "enum"
+            allowed_values:
+              - "electronics"
+              - "clothing"
+              - "books"
+              - "home"
+              - "toys"
+              - "other"
+
+      - name: "tags"
+        type: "list"
+        item_type: "string"
+        required: false
+        default: []
+        description: "Product tags for search"
+        validators:
+          - type: "max_length"
+            max_value: 20
+
+      - name: "is_featured"
+        type: "boolean"
+        required: false
+        default: false
+        description: "Whether product is featured"

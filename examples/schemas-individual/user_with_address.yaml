@@ -1,0 +1,42 @@
+# User with Address Schema
+# Demonstrates nested schema composition
+
+version: "1.0.0"
+
+metadata:
+  description: "User profile with address (nested schema example)"
+  author: "Prompt Manager Team"
+  created: "2024-11-19"
+
+schemas:
+  - name: "user_with_address"
+    version: "1.0.0"
+    description: "User profile with address"
+    strict: true
+
+    fields:
+      - name: "name"
+        type: "string"
+        required: true
+        validators:
+          - type: "min_length"
+            min_value: 2
+
+      - name: "email"
+        type: "string"
+        required: true
+        validators:
+          - type: "email"
+
+      - name: "shipping_address"
+        type: "dict"
+        nested_schema: "address"
+        required: true
+        description: "Shipping address"
+
+      - name: "billing_address"
+        type: "dict"
+        nested_schema: "address"
+        required: false
+        nullable: true
+        description: "Billing address (optional)"

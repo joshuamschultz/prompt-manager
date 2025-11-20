@@ -1,0 +1,54 @@
+# Code Review Input Schema
+# Validates input for code review prompt
+
+version: "1.0.0"
+
+metadata:
+  description: "Input validation for code review"
+  author: "Engineering Team"
+  created: "2024-11-19"
+
+schemas:
+  - name: "code_review_input"
+    version: "1.0.0"
+    description: "Input validation for code review prompt"
+    strict: true
+
+    fields:
+      - name: "language"
+        type: "string"
+        required: true
+        description: "Programming language"
+        validators:
+          - type: "enum"
+            allowed_values:
+              - "python"
+              - "javascript"
+              - "typescript"
+              - "java"
+              - "go"
+              - "rust"
+              - "c++"
+              - "c#"
+            error_message: "Unsupported programming language"
+
+      - name: "code"
+        type: "string"
+        required: true
+        description: "Code to review"
+        validators:
+          - type: "min_length"
+            min_value: 10
+            error_message: "Code must be at least 10 characters"
+          - type: "max_length"
+            max_value: 10000
+            error_message: "Code must be less than 10000 characters"
+
+      - name: "focus_areas"
+        type: "string"
+        required: false
+        default: "general code quality"
+        description: "Specific areas to focus on"
+        validators:
+          - type: "max_length"
+            max_value: 500

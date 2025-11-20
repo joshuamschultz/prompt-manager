@@ -1,0 +1,23 @@
+# Greeting Prompt
+# Simple text-based greeting prompt
+
+version: "1.0.0"
+prompts:
+  - id: "greeting"
+    version: "1.0.0"
+    format: "text"
+    status: "active"
+
+    template:
+      content: "Hello {{name}}! Welcome to {{service}}."
+      variables:
+        - name
+        - service
+
+    metadata:
+      author: "System"
+      description: "Simple greeting prompt"
+      tags:
+        - greeting
+        - welcome
+      category: "general"

@@ -1,0 +1,64 @@
+# Text Summarization Input Schema
+# Validates input for text summarization prompt
+
+version: "1.0.0"
+
+metadata:
+  description: "Input validation for text summarization"
+  author: "Content Team"
+  created: "2024-11-19"
+
+schemas:
+  - name: "text_summarization_input"
+    version: "1.0.0"
+    description: "Input validation for text summarization prompt"
+    strict: true
+
+    fields:
+      - name: "content_type"
+        type: "string"
+        required: true
+        description: "Type of content"
+        validators:
+          - type: "enum"
+            allowed_values:
+              - "article"
+              - "document"
+              - "blog post"
+              - "research paper"
+              - "email"
+              - "transcript"
+            error_message: "Invalid content type"
+
+      - name: "length"
+        type: "string"
+        required: true
+        description: "Desired summary length"
+        validators:
+          - type: "enum"
+            allowed_values:
+              - "brief"
+              - "moderate"
+              - "detailed"
+            error_message: "Length must be brief, moderate, or detailed"
+
+      - name: "text"
+        type: "string"
+        required: true
+        description: "Text to summarize"
+        validators:
+          - type: "min_length"
+            min_value: 100
+            error_message: "Text must be at least 100 characters"
+          - type: "max_length"
+            max_value: 50000
+            error_message: "Text must be less than 50000 characters"
+
+      - name: "focus"
+        type: "string"
+        required: false
+        nullable: true
+        description: "Specific aspects to focus on"
+        validators:
+          - type: "max_length"
+            max_value: 500

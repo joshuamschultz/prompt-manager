@@ -1,0 +1,83 @@
+# User Profile Schema
+# Demonstrates comprehensive validation for user data
+
+version: "1.0.0"
+
+metadata:
+  description: "User profile with comprehensive validation"
+  author: "Prompt Manager Team"
+  created: "2024-11-19"
+
+schemas:
+  - name: "user_profile"
+    version: "1.0.0"
+    description: "User profile with comprehensive validation"
+    strict: true
+
+    fields:
+      - name: "username"
+        type: "string"
+        required: true
+        description: "Unique username identifier"
+        validators:
+          - type: "min_length"
+            min_value: 3
+            error_message: "Username must be at least 3 characters"
+          - type: "max_length"
+            max_value: 20
+            error_message: "Username must be at most 20 characters"
+          - type: "regex"
+            pattern: "^[a-zA-Z0-9_]+$"
+            error_message: "Username can only contain letters, numbers, and underscores"
+
+      - name: "email"
+        type: "string"
+        required: true
+        description: "User email address"
+        validators:
+          - type: "email"
+            error_message: "Invalid email address format"
+
+      - name: "age"
+        type: "integer"
+        required: false
+        nullable: true
+        description: "User age in years"
+        validators:
+          - type: "range"
+            min_value: 13
+            max_value: 120
+            error_message: "Age must be between 13 and 120"
+
+      - name: "role"
+        type: "enum"
+        required: true
+        default: "user"
+        description: "User role in the system"
+        validators:
+          - type: "enum"
+            allowed_values: ["admin", "moderator", "user", "guest"]
+            error_message: "Invalid role"
+
+      - name: "tags"
+        type: "list"
+        item_type: "string"
+        required: false
+        default: []
+        description: "User tags for categorization"
+        validators:
+          - type: "max_length"
+            max_value: 10
+            error_message: "Maximum 10 tags allowed"
+
+      - name: "preferences"
+        type: "dict"
+        required: false
+        default: {}
+        description: "User preferences and settings"
+
+      - name: "is_active"
+        type: "boolean"
+        required: false
+        default: true
+        description: "Whether the user account is active"

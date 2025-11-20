@@ -1,0 +1,52 @@
+# Code Review Prompt
+# AI-assisted code review with focus areas
+
+version: "1.0.0"
+prompts:
+  - id: "code_review"
+    version: "1.0.0"
+    format: "chat"
+    status: "active"
+
+    chat_template:
+      messages:
+        - role: "system"
+          content: |
+            You are an expert code reviewer. Analyze the provided code for:
+            - Security vulnerabilities
+            - Performance issues
+            - Code quality and best practices
+            - Potential bugs
+            - Maintainability concerns
+
+            Provide constructive feedback with specific suggestions for improvement.
+        - role: "user"
+          content: |
+            Review this {{language}} code:
+
+            ```{{language}}
+            {{code}}
+            ```
+
+            Focus areas: {{focus_areas}}
+      variables:
+        - language
+        - code
+        - focus_areas
+
+    metadata:
+      author: "Engineering Team"
+      description: "AI-assisted code review"
+      tags:
+        - code-review
+        - engineering
+        - quality
+      category: "development"
+      model_recommendations:
+        - "gpt-4"
+        - "claude-3-opus"
+      temperature: 0.3
+      max_tokens: 4000
+
+    # Input validation schema
+    input_schema: "code_review_input"

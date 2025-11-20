@@ -1,0 +1,252 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "prompt-manager"
+version = "0.1.0"
+description = "Production-ready prompt management system with versioning, validation, and framework integrations for OpenAI, Anthropic, LangChain, and LiteLLM"
+authors = ["Josh Schultz <josh@example.com>"]
+readme = "README.md"
+license = "MIT"
+homepage = "https://github.com/joshschultz/prompt-manager"
+repository = "https://github.com/joshschultz/prompt-manager"
+documentation = "https://github.com/joshschultz/prompt-manager#readme"
+keywords = ["prompts", "llm", "ai", "openai", "anthropic", "langchain", "litellm", "templating", "pydantic", "prompt-engineering"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+]
+packages = [{include = "prompt_manager", from = "src"}]
+include = ["LICENSE", "README.md", "CHANGELOG.md", "src/prompt_manager/py.typed"]
+exclude = ["tests", "tests/**", ".github", ".github/**", "examples", "examples/**", "docs", "docs/**", "*.pyc", "__pycache__", ".mypy_cache", ".pytest_cache", ".ruff_cache", "htmlcov", ".coverage"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pydantic = "^2.10.0"
+pydantic-settings = "^2.6.0"
+pyyaml = "^6.0.2"
+pybars4 = "^0.9.13"  # Handlebars for Python
+aiofiles = "^24.1.0"
+typing-extensions = "^4.12.0"
+structlog = "^24.4.0"
+opentelemetry-api = "^1.28.2"
+opentelemetry-sdk = "^1.28.2"
+python-dateutil = "^2.9.0"
+
+# Optional framework dependencies
+openai = {version = "^1.57.0", optional = true}
+anthropic = {version = "^0.42.0", optional = true}
+langchain-core = {version = "^0.3.0", optional = true}
+litellm = {version = "^1.53.0", optional = true}
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.0"
+pytest-cov = "^6.0.0"
+pytest-asyncio = "^0.24.0"
+pytest-mock = "^3.14.0"
+pytest-benchmark = "^5.1.0"
+hypothesis = "^6.122.0"
+black = "^24.10.0"
+ruff = "^0.8.0"
+mypy = "^1.13.0"
+bandit = "^1.8.0"
+safety = "^3.2.0"
+pre-commit = "^4.0.0"
+ipython = "^8.30.0"
+rich = "^13.9.0"
+
+[tool.poetry.extras]
+openai = ["openai"]
+anthropic = ["anthropic"]
+langchain = ["langchain-core"]
+litellm = ["litellm"]
+all = ["openai", "anthropic", "langchain-core", "litellm"]
+
+[tool.poetry.plugins."prompt_manager.plugins"]
+# Plugin entry points for auto-discovery
+openai = "prompt_manager.plugins.openai_plugin:OpenAIPlugin"
+anthropic = "prompt_manager.plugins.anthropic_plugin:AnthropicPlugin"
+langchain = "prompt_manager.plugins.langchain_plugin:LangChainPlugin"
+litellm = "prompt_manager.plugins.litellm_plugin:LiteLLMPlugin"
+
+[tool.black]
+line-length = 100
+target-version = ['py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "C",      # flake8-comprehensions
+    "B",      # flake8-bugbear
+    "UP",     # pyupgrade
+    "N",      # pep8-naming
+    "SIM",    # flake8-simplify
+    "S",      # flake8-bandit (security)
+    "A",      # flake8-builtins
+    "COM",    # flake8-commas
+    "DTZ",    # flake8-datetimez
+    "EM",     # flake8-errmsg
+    "ISC",    # flake8-implicit-str-concat
+    "ICN",    # flake8-import-conventions
+    "PIE",    # flake8-pie
+    "PT",     # flake8-pytest-style
+    "Q",      # flake8-quotes
+    "RET",    # flake8-return
+    "SLF",    # flake8-self
+    "SLOT",   # flake8-slots
+    "TCH",    # flake8-type-checking
+    "ARG",    # flake8-unused-arguments
+    "PTH",    # flake8-use-pathlib
+    "ERA",    # eradicate (commented code)
+    "PD",     # pandas-vet
+    "PGH",    # pygrep-hooks
+    "PL",     # Pylint
+    "TRY",    # tryceratops
+    "FLY",    # flynt
+    "PERF",   # Perflint
+    "RUF",    # Ruff-specific rules
+]
+ignore = [
+    "S101",   # Allow assert in tests
+    "PLR0913", # Too many arguments
+    "COM812", # Trailing comma (conflicts with formatter)
+    "ISC001", # Implicit string concatenation (conflicts with formatter)
+]
+
+[tool.ruff.per-file-ignores]
+"tests/**/*.py" = ["S101", "PLR2004", "ARG001"]
+"__init__.py" = ["F401", "F403"]
+
+[tool.ruff.isort]
+known-first-party = ["prompt_manager"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+pretty = true
+show_error_codes = true
+show_error_context = true
+plugins = ["pydantic.mypy"]
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+
+[[tool.mypy.overrides]]
+module = ["pybars4.*", "opentelemetry.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=prompt_manager",
+    "--cov-report=term-missing:skip-covered",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "--cov-branch",
+    "--cov-fail-under=90",
+]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "slow: Slow running tests",
+    "benchmark: Performance benchmark tests",
+    "plugin: Plugin-specific tests",
+]
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+parallel = true
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__init__.py",
+]
+
+[tool.coverage.report]
+precision = 2
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+    "@abc.abstractmethod",
+    "Protocol",
+    "class .*\\bProtocol\\):",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.bandit]
+exclude_dirs = ["tests", "scripts"]
+tests = ["B201", "B301"]
+skips = ["B101", "B601"]
+
+[tool.bandit.assert_used]
+skips = ["*/test_*.py", "*/tests/*"]

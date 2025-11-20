@@ -1,0 +1,397 @@
+"""Unit tests for LangChain plugin."""
+
+import pytest
+from unittest.mock import AsyncMock, Mock, patch
+
+from prompt_manager.core.models import (
+    ChatPromptTemplate,
+    Message,
+    Prompt,
+    PromptFormat,
+    PromptStatus,
+    PromptTemplate,
+    Role,
+)
+from prompt_manager.exceptions import IntegrationNotAvailableError, PluginError
+from prompt_manager.plugins.langchain_plugin import LangChainPlugin
+
+
+class TestLangChainPlugin:
+    """Test suite for LangChainPlugin class."""
+
+    @pytest.fixture
+    def plugin(self) -> LangChainPlugin:
+        """Create a LangChainPlugin instance."""
+        return LangChainPlugin()
+
+    @pytest.fixture
+    def text_prompt(self) -> Prompt:
+        """Create a simple TEXT format prompt."""
+        return Prompt(
+            id="text_prompt",
+            version="1.0.0",
+            format=PromptFormat.TEXT,
+            status=PromptStatus.ACTIVE,
+            template=PromptTemplate(
+                content="Hello {{name}}!",
+                variables=["name"],
+            ),
+        )
+
+    @pytest.fixture
+    def chat_prompt(self) -> Prompt:
+        """Create a CHAT format prompt."""
+        return Prompt(
+            id="chat_prompt",
+            version="1.0.0",
+            format=PromptFormat.CHAT,
+            status=PromptStatus.ACTIVE,
+            chat_template=ChatPromptTemplate(
+                messages=[
+                    Message(role=Role.SYSTEM, content="You are a helpful assistant."),
+                    Message(role=Role.USER, content="Tell me about {{topic}}."),
+                ],
+                variables=["topic"],
+            ),
+        )
+
+    # Test: Plugin initialization
+    def test_plugin_name(self, plugin: LangChainPlugin) -> None:
+        """Test that plugin has correct name."""
+        assert plugin.name == "langchain"
+
+    def test_plugin_version(self, plugin: LangChainPlugin) -> None:
+        """Test that plugin has correct version."""
+        assert plugin.version == "1.0.0"
+
+    @pytest.mark.asyncio
+    async def test_plugin_initialization_default_config(
+        self, plugin: LangChainPlugin
+    ) -> None:
+        """Test plugin initialization with default configuration."""
+        # Act
+        await plugin.initialize({})
+
+        # Assert
+        assert plugin._initialized is True
+        assert plugin._integration is not None
+
+    @pytest.mark.asyncio
+    async def test_plugin_initialization_with_strict_validation_true(
+        self, plugin: LangChainPlugin
+    ) -> None:
+        """Test plugin initialization with strict_validation=True."""
+        # Act
+        await plugin.initialize({"strict_validation": True})
+
+        # Assert
+        assert plugin._integration is not None
+        assert plugin._integration.strict_validation is True
+
+    @pytest.mark.asyncio
+    async def test_plugin_initialization_with_strict_validation_false(
+        self, plugin: LangChainPlugin
+    ) -> None:
+        """Test plugin initialization with strict_validation=False."""
+        # Act
+        await plugin.initialize({"strict_validation": False})
+
+        # Assert
+        assert plugin._integration is not None
+        assert plugin._integration.strict_validation is False
+
+    @pytest.mark.asyncio
+    async def test_plugin_initialization_creates_template_engine(
+        self, plugin: LangChainPlugin
+    ) -> None:
+        """Test that plugin initialization creates template engine."""
+        # Act
+        await plugin.initialize({})
+
+        # Assert
+        assert plugin._integration is not None
+        assert plugin._integration.template_engine is not None
+
+    # Test: Render for framework
+    @pytest.mark.asyncio
+    async def test_render_for_framework_text_prompt(
+        self, plugin: LangChainPlugin, text_prompt: Prompt
+    ) -> None:
+        """Test rendering TEXT prompt to LangChain PromptTemplate."""
+        # Arrange
+        from langchain_core.prompts import PromptTemplate as LCPromptTemplate
+        await plugin.initialize({})
+        variables = {"name": "Alice"}
+
+        # Act
+        result = await plugin.render_for_framework(text_prompt, variables)
+
+        # Assert
+        assert isinstance(result, LCPromptTemplate)
+        # Verify Handlebars converted to f-string
+        assert "{name}" in result.template
+
+    @pytest.mark.asyncio
+    async def test_render_for_framework_chat_prompt(
+        self, plugin: LangChainPlugin, chat_prompt: Prompt
+    ) -> None:
+        """Test rendering CHAT prompt to LangChain ChatPromptTemplate."""
+        # Arrange
+        from langchain_core.prompts import ChatPromptTemplate as LCChatPromptTemplate
+        await plugin.initialize({})
+        variables = {"topic": "AI"}
+
+        # Act
+        result = await plugin.render_for_framework(chat_prompt, variables)
+
+        # Assert
+        assert isinstance(result, LCChatPromptTemplate)
+        assert len(result.messages) == 2
+
+    @pytest.mark.asyncio
+    async def test_render_for_framework_before_initialization_raises_error(
+        self, plugin: LangChainPlugin, text_prompt: Prompt
+    ) -> None:
+        """Test that rendering before initialization raises PluginError."""
+        # Act & Assert
+        with pytest.raises(PluginError, match="not initialized"):
+            await plugin.render_for_framework(text_prompt, {})
+
+    @pytest.mark.asyncio
+    async def test_render_for_framework_delegates_to_integration(
+        self, plugin: LangChainPlugin, text_prompt: Prompt
+    ) -> None:
+        """Test that render_for_framework delegates to integration.convert."""
+        # Arrange
+        from langchain_core.prompts import PromptTemplate as LCPromptTemplate
+        await plugin.initialize({})
+
+        # Mock the integration's convert method
+        mock_template = LCPromptTemplate.from_template("Mocked {result}")
+        mock_convert = AsyncMock(return_value=mock_template)
+        plugin._integration.convert = mock_convert  # type: ignore
+
+        variables = {"name": "Test"}
+
+        # Act
+        result = await plugin.render_for_framework(text_prompt, variables)
+
+        # Assert
+        mock_convert.assert_called_once_with(text_prompt, variables)
+        assert result == mock_template
+
+    # Test: Validate compatibility
+    @pytest.mark.asyncio
+    async def test_validate_compatibility_returns_true_for_text(
+        self, plugin: LangChainPlugin, text_prompt: Prompt
+    ) -> None:
+        """Test that LangChain plugin is compatible with TEXT format."""
+        # Arrange
+        await plugin.initialize({})
+
+        # Act
+        result = await plugin.validate_compatibility(text_prompt)
+
+        # Assert
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_validate_compatibility_returns_true_for_chat(
+        self, plugin: LangChainPlugin, chat_prompt: Prompt
+    ) -> None:
+        """Test that LangChain plugin is compatible with CHAT format."""
+        # Arrange
+        await plugin.initialize({})
+
+        # Act
+        result = await plugin.validate_compatibility(chat_prompt)
+
+        # Assert
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_validate_compatibility_returns_false_for_other_formats(
+        self, plugin: LangChainPlugin
+    ) -> None:
+        """Test that LangChain plugin only supports TEXT and CHAT."""
+        # Arrange
+        await plugin.initialize({})
+
+        completion_prompt = Prompt(
+            id="completion",
+            format=PromptFormat.COMPLETION,
+            status=PromptStatus.ACTIVE,
+            template=PromptTemplate(content="Test"),
+        )
+
+        # Act
+        result = await plugin.validate_compatibility(completion_prompt)
+
+        # Assert
+        assert result is False
+
+    @pytest.mark.asyncio
+    async def test_validate_compatibility_before_initialization_raises_error(
+        self, plugin: LangChainPlugin, text_prompt: Prompt
+    ) -> None:
+        """Test that validation before initialization raises PluginError."""
+        # Act & Assert
+        with pytest.raises(PluginError, match="not initialized"):
+            await plugin.validate_compatibility(text_prompt)
+
+    @pytest.mark.asyncio
+    async def test_validate_compatibility_delegates_to_integration(
+        self, plugin: LangChainPlugin, text_prompt: Prompt
+    ) -> None:
+        """Test that validate_compatibility delegates to integration."""
+        # Arrange
+        await plugin.initialize({})
+
+        # Mock the integration's validate_compatibility method
+        mock_validate = Mock(return_value=False)
+        plugin._integration.validate_compatibility = mock_validate  # type: ignore
+
+        # Act
+        result = await plugin.validate_compatibility(text_prompt)
+
+        # Assert
+        mock_validate.assert_called_once_with(text_prompt)
+        assert result is False
+
+    # Test: Shutdown
+    @pytest.mark.asyncio
+    async def test_shutdown_clears_initialized_flag(
+        self, plugin: LangChainPlugin
+    ) -> None:
+        """Test that shutdown clears initialized flag."""
+        # Arrange
+        await plugin.initialize({})
+        assert plugin._initialized is True
+
+        # Act
+        await plugin.shutdown()
+
+        # Assert
+        assert plugin._initialized is False
+
+    # Test: Configuration management
+    @pytest.mark.asyncio
+    async def test_get_config_returns_configuration(
+        self, plugin: LangChainPlugin
+    ) -> None:
+        """Test that get_config returns plugin configuration."""
+        # Arrange
+        config = {"strict_validation": False, "custom_option": "value"}
+        await plugin.initialize(config)
+
+        # Act
+        result = plugin.get_config()
+
+        # Assert
+        assert result == config
+
+    @pytest.mark.asyncio
+    async def test_get_config_returns_copy(self, plugin: LangChainPlugin) -> None:
+        """Test that get_config returns a copy of configuration."""
+        # Arrange
+        await plugin.initialize({"key": "value"})
+
+        # Act
+        config1 = plugin.get_config()
+        config2 = plugin.get_config()
+
+        # Assert
+        assert config1 == config2
+        assert config1 is not config2  # Different objects
+
+    # Test: String representation
+    def test_repr(self, plugin: LangChainPlugin) -> None:
+        """Test string representation of plugin."""
+        # Act
+        result = repr(plugin)
+
+        # Assert
+        assert "LangChainPlugin" in result
+        assert "name='langchain'" in result
+        assert "version='1.0.0'" in result
+
+    # Test: Error handling
+    @pytest.mark.asyncio
+    async def test_initialization_failure_raises_plugin_error(self) -> None:
+        """Test that initialization failures are wrapped in PluginError."""
+        # Arrange
+        plugin = LangChainPlugin()
+
+        # Mock TemplateEngine to raise exception
+        with patch(
+            "prompt_manager.plugins.langchain_plugin.TemplateEngine",
+            side_effect=Exception("Template engine failed"),
+        ):
+            # Act & Assert
+            with pytest.raises(PluginError, match="Failed to initialize LangChain"):
+                await plugin.initialize({})
+
+    @pytest.mark.asyncio
+    async def test_render_with_null_integration_raises_error(
+        self, plugin: LangChainPlugin, text_prompt: Prompt
+    ) -> None:
+        """Test that rendering with null integration raises PluginError."""
+        # Arrange
+        await plugin.initialize({})
+        plugin._integration = None  # Simulate null integration
+        plugin._initialized = True  # But keep initialized flag
+
+        # Act & Assert
+        with pytest.raises(PluginError, match="Integration not initialized"):
+            await plugin.render_for_framework(text_prompt, {})
+
+    @pytest.mark.asyncio
+    async def test_validate_with_null_integration_raises_error(
+        self, plugin: LangChainPlugin, text_prompt: Prompt
+    ) -> None:
+        """Test that validation with null integration raises PluginError."""
+        # Arrange
+        await plugin.initialize({})
+        plugin._integration = None  # Simulate null integration
+        plugin._initialized = True  # But keep initialized flag
+
+        # Act & Assert
+        with pytest.raises(PluginError, match="Integration not initialized"):
+            await plugin.validate_compatibility(text_prompt)
+
+    # Test: Multiple formats
+    @pytest.mark.asyncio
+    async def test_render_multiple_format_prompts(
+        self, plugin: LangChainPlugin, text_prompt: Prompt, chat_prompt: Prompt
+    ) -> None:
+        """Test rendering multiple different format prompts."""
+        # Arrange
+        from langchain_core.prompts import PromptTemplate as LCPromptTemplate
+        from langchain_core.prompts import ChatPromptTemplate as LCChatPromptTemplate
+        await plugin.initialize({})
+
+        # Act
+        text_result = await plugin.render_for_framework(text_prompt, {"name": "Bob"})
+        chat_result = await plugin.render_for_framework(chat_prompt, {"topic": "ML"})
+
+        # Assert
+        assert isinstance(text_result, LCPromptTemplate)
+        assert "{name}" in text_result.template
+
+        assert isinstance(chat_result, LCChatPromptTemplate)
+        assert len(chat_result.messages) == 2
+
+    # Test: Reinitialization
+    @pytest.mark.asyncio
+    async def test_reinitialization_allowed(self, plugin: LangChainPlugin) -> None:
+        """Test that plugin can be reinitialized with different config."""
+        # Arrange & Act
+        await plugin.initialize({"strict_validation": True})
+        first_integration = plugin._integration
+
+        await plugin.initialize({"strict_validation": False})
+        second_integration = plugin._integration
+
+        # Assert
+        assert first_integration is not second_integration
+        assert second_integration.strict_validation is False

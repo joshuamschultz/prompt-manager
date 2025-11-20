@@ -1,0 +1,59 @@
+# Data Analysis Input Schema
+# Validates input for data analysis prompt
+
+version: "1.0.0"
+
+metadata:
+  description: "Input validation for data analysis"
+  author: "Data Team"
+  created: "2024-11-19"
+
+schemas:
+  - name: "data_analysis_input"
+    version: "1.0.0"
+    description: "Input validation for data analysis prompt"
+    strict: true
+
+    fields:
+      - name: "data_type"
+        type: "string"
+        required: true
+        description: "Type of data being analyzed"
+        validators:
+          - type: "enum"
+            allowed_values:
+              - "numerical"
+              - "categorical"
+              - "time-series"
+              - "text"
+              - "mixed"
+            error_message: "Invalid data type"
+
+      - name: "data"
+        type: "string"
+        required: true
+        description: "Data to analyze (CSV, JSON, or text)"
+        validators:
+          - type: "min_length"
+            min_value: 10
+            error_message: "Data must be at least 10 characters"
+
+      - name: "goals"
+        type: "string"
+        required: true
+        description: "Analysis goals and objectives"
+        validators:
+          - type: "min_length"
+            min_value: 10
+            error_message: "Goals must be at least 10 characters"
+          - type: "max_length"
+            max_value: 1000
+
+      - name: "context"
+        type: "string"
+        required: false
+        nullable: true
+        description: "Additional context for analysis"
+        validators:
+          - type: "max_length"
+            max_value: 2000

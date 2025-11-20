@@ -1,0 +1,69 @@
+# Prompt Variables Schema
+# Variables for LLM prompt template rendering
+
+version: "1.0.0"
+
+metadata:
+  description: "Variables for prompt template rendering"
+  author: "Prompt Manager Team"
+  created: "2024-11-19"
+
+schemas:
+  - name: "prompt_variables"
+    version: "1.0.0"
+    description: "Variables for prompt template rendering"
+    strict: true
+
+    fields:
+      - name: "model"
+        type: "enum"
+        required: true
+        description: "LLM model to use"
+        validators:
+          - type: "enum"
+            allowed_values:
+              - "gpt-4"
+              - "gpt-3.5-turbo"
+              - "claude-3-opus"
+              - "claude-3-sonnet"
+              - "claude-3-haiku"
+
+      - name: "temperature"
+        type: "float"
+        required: false
+        default: 0.7
+        description: "Sampling temperature"
+        validators:
+          - type: "range"
+            min_value: 0.0
+            max_value: 2.0
+
+      - name: "max_tokens"
+        type: "integer"
+        required: false
+        nullable: true
+        description: "Maximum tokens to generate"
+        validators:
+          - type: "range"
+            min_value: 1
+            max_value: 100000
+
+      - name: "system_prompt"
+        type: "string"
+        required: false
+        nullable: true
+        description: "System prompt override"
+
+      - name: "user_input"
+        type: "string"
+        required: true
+        description: "User input message"
+        validators:
+          - type: "min_length"
+            min_value: 1
+
+      - name: "context"
+        type: "dict"
+        required: false
+        default: {}
+        description: "Additional context variables"
