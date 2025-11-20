@@ -222,7 +222,7 @@ class MyFrameworkIntegration(BaseIntegration):
         if not MYFRAMEWORK_AVAILABLE:
             raise IntegrationError(
                 "MyFramework not installed. "
-                "Install with: pip install prompt-manager[myframework]"
+                "Install with: pip install agentic-prompt-manager[myframework]"
             )
         super().__init__(*args, **kwargs)
 ```
@@ -499,7 +499,7 @@ To contribute your integration to Prompt Manager:
 
 **Solution**: Install with extra:
 ```bash
-pip install prompt-manager[myframework]
+pip install agentic-prompt-manager[myframework]
 ```
 
 ### "ConversionError: Template required"

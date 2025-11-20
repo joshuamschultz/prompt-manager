@@ -11,7 +11,7 @@ Learn how to:
 This is a complete, working example that you can use as a template for your own integrations.
 
 Requirements:
-    pip install prompt-manager
+    pip install agentic-prompt-manager
 
 Usage:
     python custom_integration_example.py

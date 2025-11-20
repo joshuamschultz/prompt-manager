@@ -8,7 +8,7 @@ This example demonstrates how to use Prompt Manager with LangChain to:
 4. Work with partial variables and chain composition
 
 Requirements:
-    pip install prompt-manager[langchain]
+    pip install agentic-prompt-manager[langchain]
     pip install langchain-openai  # For LLM examples
 
 Environment:

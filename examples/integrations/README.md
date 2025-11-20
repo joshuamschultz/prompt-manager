@@ -16,13 +16,13 @@ This directory contains complete, runnable examples for integrating Prompt Manag
 
 ```bash
 # Install all framework integrations
-pip install prompt-manager[all]
+pip install agentic-prompt-manager[all]
 
 # Or install specific frameworks
-pip install prompt-manager[openai]
-pip install prompt-manager[anthropic]
-pip install prompt-manager[langchain]
-pip install prompt-manager[litellm]
+pip install agentic-prompt-manager[openai]
+pip install agentic-prompt-manager[anthropic]
+pip install agentic-prompt-manager[langchain]
+pip install agentic-prompt-manager[litellm]
 ```
 
 ### Set Up API Keys
@@ -139,7 +139,7 @@ from prompt_manager.exceptions import (
 try:
     messages = await integration.convert(prompt, variables)
 except IntegrationNotAvailableError:
-    print("Framework not installed. Install with: pip install prompt-manager[framework]")
+    print("Framework not installed. Install with: pip install agentic-prompt-manager[framework]")
 except ConversionError as e:
     print(f"Conversion failed: {e}")
     # Handle missing variables, template errors, etc.
@@ -161,7 +161,7 @@ except ConversionError as e:
 
 **Solution**:
 ```bash
-pip install prompt-manager[openai]  # or anthropic, langchain, litellm
+pip install agentic-prompt-manager[openai]  # or anthropic, langchain, litellm
 ```
 
 ### "Missing required variable"

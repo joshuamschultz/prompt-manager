@@ -1,7 +1,7 @@
 # Prompt Manager
 
-[![PyPI version](https://badge.fury.io/py/prompt-manager.svg)](https://badge.fury.io/py/prompt-manager)
-[![Python Version](https://img.shields.io/pypi/pyversions/prompt-manager.svg)](https://pypi.org/project/prompt-manager/)
+[![PyPI version](https://badge.fury.io/py/agentic-prompt-manager.svg)](https://badge.fury.io/py/agentic-prompt-manager)
+[![Python Version](https://img.shields.io/pypi/pyversions/agentic-prompt-manager.svg)](https://pypi.org/project/agentic-prompt-manager/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/joshuamschultz/prompt-manager/test.yml?branch=master)](https://github.com/joshuamschultz/prompt-manager/actions)
 [![Coverage](https://img.shields.io/codecov/c/github/joshuamschultz/prompt-manager)](https://codecov.io/gh/joshuamschultz/prompt-manager)
@@ -42,16 +42,16 @@ See [Framework Integration Examples](#framework-integration-examples) below for 
 
 ```bash
 # Core package only
-pip install prompt-manager
+pip install agentic-prompt-manager
 
 # With specific framework integration
-pip install prompt-manager[openai]      # OpenAI SDK support
-pip install prompt-manager[anthropic]   # Anthropic SDK (Claude) support
-pip install prompt-manager[langchain]   # LangChain support
-pip install prompt-manager[litellm]     # LiteLLM multi-provider support
+pip install agentic-prompt-manager[openai]      # OpenAI SDK support
+pip install agentic-prompt-manager[anthropic]   # Anthropic SDK (Claude) support
+pip install agentic-prompt-manager[langchain]   # LangChain support
+pip install agentic-prompt-manager[litellm]     # LiteLLM multi-provider support
 
 # With all framework integrations
-pip install prompt-manager[all]
+pip install agentic-prompt-manager[all]
 
 # Development installation with Poetry
 poetry install --with dev -E all
@@ -537,7 +537,7 @@ try:
     messages = await integration.convert(prompt, variables)
 except IntegrationNotAvailableError as e:
     # Framework not installed
-    print(e)  # "OpenAI integration not available. Install with: pip install prompt-manager[openai]"
+    print(e)  # "OpenAI integration not available. Install with: pip install agentic-prompt-manager[openai]"
 
 except IncompatibleFormatError as e:
     # Prompt format not supported by framework

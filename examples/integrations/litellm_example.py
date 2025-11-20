@@ -8,7 +8,7 @@ This example demonstrates how to use Prompt Manager with LiteLLM to:
 4. Work with unified interface across 100+ LLM providers
 
 Requirements:
-    pip install prompt-manager[litellm]
+    pip install agentic-prompt-manager[litellm]
 
 Environment:
     OPENAI_API_KEY=sk-...        # For OpenAI models

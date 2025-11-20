@@ -8,7 +8,7 @@ This example demonstrates how to use Prompt Manager with the OpenAI SDK to:
 4. Work with function calling and tool use
 
 Requirements:
-    pip install prompt-manager[openai]
+    pip install agentic-prompt-manager[openai]
 
 Environment:
     OPENAI_API_KEY=sk-...  # Set this in .env file or environment

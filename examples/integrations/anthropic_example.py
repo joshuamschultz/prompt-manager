@@ -8,7 +8,7 @@ This example demonstrates how to use Prompt Manager with the Anthropic SDK to:
 4. Use prompts with Claude API
 
 Requirements:
-    pip install prompt-manager[anthropic]
+    pip install agentic-prompt-manager[anthropic]
 
 Environment:
     ANTHROPIC_API_KEY=sk-ant-...  # Set this in .env file or environment

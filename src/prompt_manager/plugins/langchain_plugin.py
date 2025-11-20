@@ -17,7 +17,7 @@ class LangChainPlugin(BasePlugin):
 
     Note:
         Requires langchain-core to be installed. Install with:
-        pip install prompt-manager[langchain]
+        pip install agentic-prompt-manager[langchain]
 
     Example:
         >>> plugin = LangChainPlugin()

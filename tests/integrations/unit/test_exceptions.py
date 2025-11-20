@@ -36,7 +36,7 @@ class TestIntegrationNotAvailableError:
         msg = str(error)
 
         assert "openai" in msg
-        assert "pip install prompt-manager[openai]" in msg
+        assert "pip install agentic-prompt-manager[openai]" in msg
 
     def test_message_with_custom_extra(self) -> None:
         """Test error message with custom pip extra name."""
@@ -44,14 +44,14 @@ class TestIntegrationNotAvailableError:
         msg = str(error)
 
         assert "langchain" in msg
-        assert "pip install prompt-manager[langchain-core]" in msg
+        assert "pip install agentic-prompt-manager[langchain-core]" in msg
 
     def test_message_without_extra(self) -> None:
         """Test error message defaults to integration name for extra."""
         error = IntegrationNotAvailableError("anthropic")
         msg = str(error)
 
-        assert "pip install prompt-manager[anthropic]" in msg
+        assert "pip install agentic-prompt-manager[anthropic]" in msg
 
     def test_context_preserved(self) -> None:
         """Test that context information is preserved."""

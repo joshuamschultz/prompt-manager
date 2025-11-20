@@ -173,7 +173,7 @@ You'll be prompted for credentials. Use your TestPyPI API token (see "Setting Up
 
 **Verify TestPyPI package page**:
 
-Visit https://test.pypi.org/project/prompt-manager/ and verify:
+Visit https://test.pypi.org/project/agentic-prompt-manager/ and verify:
 - Version number is correct
 - README renders properly
 - Metadata is complete
@@ -191,7 +191,7 @@ source test-env/bin/activate  # On Windows: test-env\Scripts\activate
 # Install from TestPyPI (with fallback to PyPI for dependencies)
 pip install --index-url https://test.pypi.org/simple/ \
             --extra-index-url https://pypi.org/simple/ \
-            prompt-manager
+            agentic-prompt-manager
 
 # Test basic functionality
 python -c "import prompt_manager; print(prompt_manager.__version__)"
@@ -202,7 +202,7 @@ python -c "from prompt_manager.integrations import BaseIntegration"
 # Install with extras
 pip install --index-url https://test.pypi.org/simple/ \
             --extra-index-url https://pypi.org/simple/ \
-            'prompt-manager[openai]'
+            'agentic-prompt-manager[openai]'
 
 # Run an example
 cd examples/integrations/
@@ -246,7 +246,7 @@ poetry publish
 
 Check the PyPI package page:
 
-Visit https://pypi.org/project/prompt-manager/ and verify:
+Visit https://pypi.org/project/agentic-prompt-manager/ and verify:
 - Version X.Y.Z is listed as latest
 - README renders correctly
 - All classifiers are correct
@@ -261,13 +261,13 @@ python -m venv verify-env
 source verify-env/bin/activate
 
 # Install from PyPI
-pip install prompt-manager
+pip install agentic-prompt-manager
 
 # Verify version
 python -c "import prompt_manager; print(prompt_manager.__version__)"
 
 # Test with extras
-pip install 'prompt-manager[all]'
+pip install 'agentic-prompt-manager[all]'
 
 # Cleanup
 deactivate
@@ -374,7 +374,7 @@ For automated releases via GitHub Actions:
 
 1. **PyPI Token**:
    - Go to https://pypi.org/manage/account/token/
-   - Create a new API token with scope "Project: prompt-manager" (or "Entire account")
+   - Create a new API token with scope "Project: agentic-prompt-manager" (or "Entire account")
    - Copy the token (starts with `pypi-`)
    - Go to GitHub repository Settings → Secrets and variables → Actions
    - Click "New repository secret"

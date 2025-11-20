@@ -6,13 +6,13 @@ Get up and running with Prompt Manager in 5 minutes.
 
 ```bash
 # Install with Poetry (recommended)
-poetry add prompt-manager
+poetry add agentic-prompt-manager
 
 # Or with pip
-pip install prompt-manager
+pip install agentic-prompt-manager
 
 # With optional plugins
-poetry add prompt-manager -E all
+poetry add agentic-prompt-manager -E all
 ```
 
 ## Basic Usage

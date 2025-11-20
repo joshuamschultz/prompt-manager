@@ -3,15 +3,15 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "prompt-manager"
+name = "agentic-prompt-manager"
 version = "0.1.0"
 description = "Production-ready prompt management system with versioning, validation, and framework integrations for OpenAI, Anthropic, LangChain, and LiteLLM"
 authors = ["Josh Schultz <josh@example.com>"]
 readme = "README.md"
 license = "MIT"
-homepage = "https://github.com/joshschultz/prompt-manager"
-repository = "https://github.com/joshschultz/prompt-manager"
-documentation = "https://github.com/joshschultz/prompt-manager#readme"
+homepage = "https://github.com/joshuamschultz/prompt-manager"
+repository = "https://github.com/joshuamschultz/prompt-manager"
+documentation = "https://github.com/joshuamschultz/prompt-manager#readme"
 keywords = ["prompts", "llm", "ai", "openai", "anthropic", "langchain", "litellm", "templating", "pydantic", "prompt-engineering"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -25,8 +25,89 @@ classifiers = [
     "Typing :: Typed",
 ]
 packages = [{include = "prompt_manager", from = "src"}]
-include = ["LICENSE", "README.md", "CHANGELOG.md", "src/prompt_manager/py.typed"]
-exclude = ["tests", "tests/**", ".github", ".github/**", "examples", "examples/**", "docs", "docs/**", "*.pyc", "__pycache__", ".mypy_cache", ".pytest_cache", ".ruff_cache", "htmlcov", ".coverage"]
+include = [
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md",
+]
+exclude = [
+    # Test files and directories
+    "tests",
+    "tests/**",
+
+    # Development documentation (not for end users)
+    "docs",
+    "docs/**",
+    "RELEASING.md",
+    "PUBLISHING.md",
+    "CONTRIBUTING.md",
+    "RECOMMENDATIONS.md",
+    "QUICK_START.md",
+    "src/prompt_manager/validation/README.md",
+    "src/**/README.md",
+
+    # Examples and demos
+    "examples",
+    "examples/**",
+
+    # CI/CD and development tools
+    ".github",
+    ".github/**",
+    "scripts",
+    "scripts/**",
+    "Makefile",
+    ".gitignore",
+    ".pre-commit-config.yaml",
+
+    # Environment and secrets
+    ".env",
+    ".env.*",
+    "!.env.example",
+
+    # IDE and editor files
+    ".vscode",
+    ".idea",
+    "*.swp",
+    "*.swo",
+    "*~",
+
+    # Python artifacts
+    "*.pyc",
+    "*.pyo",
+    "*.pyd",
+    "__pycache__",
+    "__pycache__/**",
+    "*.so",
+    "*.egg",
+    "*.egg-info",
+    "*.egg-info/**",
+
+    # Test and coverage artifacts
+    ".pytest_cache",
+    ".pytest_cache/**",
+    ".mypy_cache",
+    ".mypy_cache/**",
+    ".ruff_cache",
+    ".ruff_cache/**",
+    ".coverage",
+    ".coverage.*",
+    "htmlcov",
+    "htmlcov/**",
+    "coverage.xml",
+    "coverage.json",
+    ".tox",
+    ".tox/**",
+
+    # Build artifacts
+    "dist",
+    "dist/**",
+    "build",
+    "build/**",
+
+    # Claude/AI development files
+    ".claude",
+    ".claude/**",
+]
 
 [tool.poetry.dependencies]
 python = "^3.11"

@@ -182,7 +182,7 @@ class IntegrationNotAvailableError(IntegrationError):
         extra_name = extra or integration_name
         msg = (
             f"Integration '{integration_name}' is not available. "
-            f"Install it with: pip install prompt-manager[{extra_name}]"
+            f"Install it with: pip install agentic-prompt-manager[{extra_name}]"
         )
         super().__init__(msg, integration_name=integration_name, extra=extra_name)
 
