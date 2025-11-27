@@ -12,24 +12,24 @@ class TestPluginDiscoveryE2E:
         assert registry is not None
 
     @pytest.mark.integration
-    async def test_openai_plugin_registration(self):
+    def test_openai_plugin_registration(self):
         """Test that OpenAI plugin can be loaded."""
         from prompt_manager.plugins.openai_plugin import OpenAIPlugin
 
         plugin = OpenAIPlugin()
-        await plugin.initialize({})
+        plugin.initialize({})
 
         assert plugin.name == "openai"
         assert plugin.version == "1.0.0"
 
     @pytest.mark.integration
-    async def test_plugin_provides_integration(self):
+    def test_plugin_provides_integration(self):
         """Test that plugin provides integration functionality."""
         from prompt_manager.plugins.openai_plugin import OpenAIPlugin
         from prompt_manager.core.models import Prompt, PromptFormat, PromptTemplate
 
         plugin = OpenAIPlugin()
-        await plugin.initialize({})
+        plugin.initialize({})
 
         prompt = Prompt(
             id="test",
@@ -37,6 +37,6 @@ class TestPluginDiscoveryE2E:
             template=PromptTemplate(content="Hello!"),
         )
 
-        result = await plugin.render_for_framework(prompt, {})
+        result = plugin.render_for_framework(prompt, {})
         assert isinstance(result, str)
         assert "Hello!" in result

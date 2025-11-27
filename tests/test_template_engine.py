@@ -15,64 +15,64 @@ class TestTemplateEngine:
         """Create template engine."""
         return TemplateEngine()
 
-    async def test_simple_render(self, engine: TemplateEngine) -> None:
+    def test_simple_render(self, engine: TemplateEngine) -> None:
         """Test simple template rendering."""
-        result = await engine.render(
+        result = engine.render(
             "Hello {{name}}!",
             {"name": "World"},
         )
         assert result == "Hello World!"
 
-    async def test_multiple_variables(self, engine: TemplateEngine) -> None:
+    def test_multiple_variables(self, engine: TemplateEngine) -> None:
         """Test rendering with multiple variables."""
-        result = await engine.render(
+        result = engine.render(
             "{{greeting}} {{name}}, welcome to {{service}}!",
             {"greeting": "Hello", "name": "Alice", "service": "Prompt Manager"},
         )
         assert result == "Hello Alice, welcome to Prompt Manager!"
 
-    async def test_missing_variable(self, engine: TemplateEngine) -> None:
+    def test_missing_variable(self, engine: TemplateEngine) -> None:
         """Test rendering with missing variable."""
         # pybars raises error for missing variables
         from prompt_manager.exceptions import TemplateRenderError
 
         with pytest.raises(TemplateRenderError, match="Could not find variable"):
-            await engine.render(
+            engine.render(
                 "Hello {{name}}!",
                 {},
             )
 
-    async def test_invalid_syntax(self, engine: TemplateEngine) -> None:
+    def test_invalid_syntax(self, engine: TemplateEngine) -> None:
         """Test invalid template syntax."""
         # Note: pybars is very lenient and doesn't raise errors for most malformed templates
         # This test verifies that validate() returns True for templates that compile
-        is_valid = await engine.validate("{{invalid")
+        is_valid = engine.validate("{{invalid")
         # pybars accepts unclosed brackets, so this is technically "valid"
         assert is_valid is True
 
-    async def test_validate_valid_template(self, engine: TemplateEngine) -> None:
+    def test_validate_valid_template(self, engine: TemplateEngine) -> None:
         """Test validating valid template."""
-        is_valid = await engine.validate("Hello {{name}}!")
+        is_valid = engine.validate("Hello {{name}}!")
         assert is_valid is True
 
-    async def test_extract_variables(self, engine: TemplateEngine) -> None:
+    def test_extract_variables(self, engine: TemplateEngine) -> None:
         """Test extracting variables from template."""
         variables = engine.extract_variables("Hello {{name}}, welcome to {{service}}!")
         assert set(variables) == {"name", "service"}
 
-    async def test_extract_variables_duplicates(self, engine: TemplateEngine) -> None:
+    def test_extract_variables_duplicates(self, engine: TemplateEngine) -> None:
         """Test extracting variables with duplicates."""
         variables = engine.extract_variables("{{name}} {{name}} {{other}}")
         assert set(variables) == {"name", "other"}
 
-    async def test_extract_variables_with_whitespace(self, engine: TemplateEngine) -> None:
+    def test_extract_variables_with_whitespace(self, engine: TemplateEngine) -> None:
         """Test extracting variables with whitespace."""
         variables = engine.extract_variables("{{ name }} {{ service }}")
         assert set(variables) == {"name", "service"}
 
-    async def test_render_with_partials(self, engine: TemplateEngine) -> None:
+    def test_render_with_partials(self, engine: TemplateEngine) -> None:
         """Test rendering with partial templates."""
-        result = await engine.render(
+        result = engine.render(
             "Header: {{>header}}\nContent: {{content}}",
             {"content": "Main content", "site": "My Site"},
             partials={"header": "Welcome to {{site}}"},
@@ -91,14 +91,14 @@ class TestChatTemplateEngine:
         """Create chat template engine."""
         return ChatTemplateEngine()
 
-    async def test_render_messages(self, engine: ChatTemplateEngine) -> None:
+    def test_render_messages(self, engine: ChatTemplateEngine) -> None:
         """Test rendering chat messages."""
         messages = [
             {"role": "system", "content": "You are a helpful assistant for {{company}}."},
             {"role": "user", "content": "{{query}}"},
         ]
 
-        rendered = await engine.render_messages(
+        rendered = engine.render_messages(
             messages,
             {"company": "Acme Corp", "query": "Help me!"},
         )
@@ -107,18 +107,18 @@ class TestChatTemplateEngine:
         assert rendered[0]["content"] == "You are a helpful assistant for Acme Corp."
         assert rendered[1]["content"] == "Help me!"
 
-    async def test_render_messages_no_variables(self, engine: ChatTemplateEngine) -> None:
+    def test_render_messages_no_variables(self, engine: ChatTemplateEngine) -> None:
         """Test rendering messages without variables."""
         messages = [
             {"role": "system", "content": "Static content"},
         ]
 
-        rendered = await engine.render_messages(messages, {})
+        rendered = engine.render_messages(messages, {})
 
         assert len(rendered) == 1
         assert rendered[0]["content"] == "Static content"
 
-    async def test_extract_variables_from_messages(
+    def test_extract_variables_from_messages(
         self, engine: ChatTemplateEngine
     ) -> None:
         """Test extracting variables from messages."""
@@ -130,7 +130,7 @@ class TestChatTemplateEngine:
         variables = engine.extract_variables_from_messages(messages)
         assert set(variables) == {"service", "name"}
 
-    async def test_preserve_message_fields(self, engine: ChatTemplateEngine) -> None:
+    def test_preserve_message_fields(self, engine: ChatTemplateEngine) -> None:
         """Test that additional message fields are preserved."""
         messages = [
             {
@@ -141,7 +141,7 @@ class TestChatTemplateEngine:
             }
         ]
 
-        rendered = await engine.render_messages(messages, {"name": "User"})
+        rendered = engine.render_messages(messages, {"name": "User"})
 
         assert rendered[0]["role"] == "assistant"
         assert rendered[0]["content"] == "Hello User"
@@ -153,7 +153,7 @@ class TestChatTemplateEngine:
 class TestTemplateEngineIntegration:
     """Integration tests for template engine."""
 
-    async def test_complex_template(self) -> None:
+    def test_complex_template(self) -> None:
         """Test complex real-world template."""
         engine = TemplateEngine()
 
@@ -183,7 +183,7 @@ class TestTemplateEngineIntegration:
             "company_name": "Acme Corp",
         }
 
-        result = await engine.render(template, variables)
+        result = engine.render(template, variables)
 
         assert "John Doe" in result
         assert "12345" in result

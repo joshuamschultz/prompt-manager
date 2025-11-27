@@ -1,0 +1,41 @@
+id: customer_support
+version: 1.0.0
+uid: 1ad5952f-3054-4060-bcaa-86ff14a2e8df
+format: chat
+template: null
+chat_template:
+  messages:
+  - role: system
+    content: You are a helpful customer support agent for {{company}}. Be professional
+      and empathetic.
+    name: null
+    function_call: null
+    tool_calls: null
+  - role: user
+    content: '{{customer_query}}'
+    name: null
+    function_call: null
+    tool_calls: null
+  variables:
+  - company
+  - customer_query
+status: active
+created_at: '2025-11-26T21:57:20.107182'
+updated_at: '2025-11-26T21:57:20.107193'
+metadata:
+  author: Support Team
+  description: Customer support chat template
+  tags:
+  - support
+  - chat
+  category: customer-service
+  use_cases: []
+  model_recommendations:
+  - gpt-4
+  - claude-3-opus
+  - claude-3-sonnet
+  temperature: 0.7
+  max_tokens: 2000
+  custom: {}
+input_schema: null
+output_schema: null

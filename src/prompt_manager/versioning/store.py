@@ -11,7 +11,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import aiofiles
 import structlog
 
 from prompt_manager.core.models import PromptVersion
@@ -41,9 +40,12 @@ class VersionStore:
         if storage_path:
             storage_path.mkdir(parents=True, exist_ok=True)
 
-    async def save_version(self, version: PromptVersion) -> None:
+    def save_version(self, version: PromptVersion) -> None:
         """
         Save a prompt version.
+
+        Usage:
+            version_store.save_version(version)
 
         Args:
             version: Prompt version to save
@@ -73,7 +75,7 @@ class VersionStore:
 
         # Persist to file if configured
         if self._storage_path:
-            await self._persist_version(version_with_checksum)
+            self._persist_version(version_with_checksum)
 
         self._logger.info(
             "version_saved",
@@ -81,9 +83,12 @@ class VersionStore:
             version=version.version,
         )
 
-    async def get_version(self, prompt_id: str, version: str) -> PromptVersion:
+    def get_version(self, prompt_id: str, version: str) -> PromptVersion:
         """
         Get a specific version.
+
+        Usage:
+            version = version_store.get_version(prompt_id, version)
 
         Args:
             prompt_id: Prompt identifier
@@ -104,9 +109,12 @@ class VersionStore:
 
         raise VersionNotFoundError(prompt_id, version)
 
-    async def list_versions(self, prompt_id: str) -> list[PromptVersion]:
+    def list_versions(self, prompt_id: str) -> list[PromptVersion]:
         """
         List all versions for a prompt.
+
+        Usage:
+            versions = version_store.list_versions(prompt_id)
 
         Args:
             prompt_id: Prompt identifier
@@ -122,9 +130,12 @@ class VersionStore:
 
         return list(self._versions[prompt_id])
 
-    async def get_latest(self, prompt_id: str) -> PromptVersion:
+    def get_latest(self, prompt_id: str) -> PromptVersion:
         """
         Get the latest version.
+
+        Usage:
+            latest = version_store.get_latest(prompt_id)
 
         Args:
             prompt_id: Prompt identifier
@@ -140,7 +151,7 @@ class VersionStore:
 
         return self._versions[prompt_id][0]  # Already sorted newest first
 
-    async def get_history(
+    def get_history(
         self,
         prompt_id: str,
         *,
@@ -149,6 +160,9 @@ class VersionStore:
     ) -> list[PromptVersion]:
         """
         Get version history with time filters.
+
+        Usage:
+            history = version_store.get_history(prompt_id, since=some_date)
 
         Args:
             prompt_id: Prompt identifier
@@ -179,7 +193,7 @@ class VersionStore:
 
         return list(versions)
 
-    async def get_changelog(
+    def get_changelog(
         self,
         prompt_id: str,
         from_version: str | None = None,
@@ -187,6 +201,9 @@ class VersionStore:
     ) -> list[dict[str, Any]]:
         """
         Get changelog entries between versions.
+
+        Usage:
+            changelog = version_store.get_changelog(prompt_id, from_version="1.0.0")
 
         Args:
             prompt_id: Prompt identifier
@@ -199,7 +216,7 @@ class VersionStore:
         Raises:
             PromptNotFoundError: If prompt doesn't exist
         """
-        versions = await self.list_versions(prompt_id)
+        versions = self.list_versions(prompt_id)
 
         # Determine version range
         start_idx = 0
@@ -233,7 +250,7 @@ class VersionStore:
 
         return changelog_entries
 
-    async def compare_versions(
+    def compare_versions(
         self,
         prompt_id: str,
         version1: str,
@@ -241,6 +258,9 @@ class VersionStore:
     ) -> dict[str, Any]:
         """
         Compare two versions and return differences.
+
+        Usage:
+            differences = version_store.compare_versions(prompt_id, "1.0.0", "1.1.0")
 
         Args:
             prompt_id: Prompt identifier
@@ -253,8 +273,8 @@ class VersionStore:
         Raises:
             VersionNotFoundError: If either version doesn't exist
         """
-        v1 = await self.get_version(prompt_id, version1)
-        v2 = await self.get_version(prompt_id, version2)
+        v1 = self.get_version(prompt_id, version1)
+        v2 = self.get_version(prompt_id, version2)
 
         # Compare checksums
         checksums_differ = v1.checksum != v2.checksum
@@ -270,9 +290,12 @@ class VersionStore:
 
         return differences
 
-    async def load_from_storage(self) -> int:
+    def load_from_storage(self) -> int:
         """
         Load all versions from file storage.
+
+        Usage:
+            count = version_store.load_from_storage()
 
         Returns:
             Number of versions loaded
@@ -288,8 +311,8 @@ class VersionStore:
         count = 0
         for version_file in self._storage_path.glob("*.json"):
             try:
-                async with aiofiles.open(version_file, "r") as f:
-                    content = await f.read()
+                with open(version_file, "r") as f:
+                    content = f.read()
                     data = json.loads(content)
                     version = PromptVersion.model_validate(data)
 
@@ -320,7 +343,11 @@ class VersionStore:
             return version
 
         # Calculate checksum from prompt content
-        content = version.prompt.model_dump_json(sort_keys=True)
+        # Note: Pydantic v2 model_dump_json doesn't have sort_keys parameter
+        # so we need to dump to dict first, then use json.dumps with sort_keys
+        import json
+        content_dict = version.prompt.model_dump(mode='json')
+        content = json.dumps(content_dict, sort_keys=True)
         checksum = hashlib.sha256(content.encode()).hexdigest()
 
         # Create new version with checksum (PromptVersion is frozen)
@@ -334,7 +361,7 @@ class VersionStore:
             checksum=checksum,
         )
 
-    async def _persist_version(self, version: PromptVersion) -> None:
+    def _persist_version(self, version: PromptVersion) -> None:
         """Persist version to file."""
         if not self._storage_path:
             return
@@ -346,8 +373,8 @@ class VersionStore:
             # Serialize to JSON
             data = version.model_dump(mode="json")
 
-            async with aiofiles.open(filepath, "w") as f:
-                await f.write(json.dumps(data, indent=2))
+            with open(filepath, "w") as f:
+                f.write(json.dumps(data, indent=2))
 
         except Exception as e:
             msg = f"Failed to persist version: {e}"

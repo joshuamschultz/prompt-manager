@@ -9,7 +9,6 @@ from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-from uuid import uuid4
 
 import structlog
 
@@ -81,7 +80,7 @@ class PromptManager:
         self._logger = logger.bind(component="manager")
 
     @classmethod
-    async def create(
+    def create(
         cls,
         prompt_dir: Path | str = "./prompts",
         auto_load_yaml: bool = True,
@@ -95,8 +94,9 @@ class PromptManager:
 
         This is the recommended way to create a PromptManager. It:
         1. Creates storage in the specified prompt directory
-        2. Automatically loads all YAML files from that directory
-        3. Sets up all components with sensible defaults
+        2. Automatically loads all YAML prompt files from that directory
+        3. Auto-discovers and loads schemas for prompts that reference them
+        4. Sets up all components with sensible defaults
 
         Args:
             prompt_dir: Directory for storing prompts (default: "./prompts")
@@ -111,15 +111,15 @@ class PromptManager:
 
         Example:
             >>> # Simplest usage - everything automatic
-            >>> manager = await PromptManager.create()
+            >>> manager = PromptManager.create()
             >>>
             >>> # Custom directory
-            >>> manager = await PromptManager.create(prompt_dir="./my-prompts")
+            >>> manager = PromptManager.create(prompt_dir="./my-prompts")
             >>>
             >>> # Disable auto-loading
-            >>> manager = await PromptManager.create(auto_load_yaml=False)
+            >>> manager = PromptManager.create(auto_load_yaml=False)
         """
-        from prompt_manager.storage import FileSystemStorage, YAMLLoader
+        from prompt_manager.storage import FileSystemStorage
 
         # Convert to Path if string
         if isinstance(prompt_dir, str):
@@ -140,21 +140,40 @@ class PromptManager:
 
         # Auto-load YAML files if requested
         if auto_load_yaml and prompt_dir.exists():
-            loader = YAMLLoader(registry)
-
-            # Load all .yaml and .yml files from directory
+            # Find all YAML files in the prompt directory (not in subdirectories)
             yaml_files = list(prompt_dir.glob("*.yaml")) + list(prompt_dir.glob("*.yml"))
 
             total_loaded = 0
+            schemas_to_load: set[str] = set()
+
             for yaml_file in yaml_files:
                 try:
-                    count = await loader.import_to_registry(yaml_file)
-                    total_loaded += count
+                    # Load YAML file directly as a Prompt
+                    import yaml
+
+                    with open(yaml_file, "r", encoding="utf-8") as f:
+                        data = yaml.safe_load(f)
+
+                    # Validate and create Prompt
+                    prompt = Prompt.model_validate(data)
+
+                    # Register the prompt (don't persist since it's already on disk)
+                    registry.register(prompt, persist=False)
+                    total_loaded += 1
+
+                    # Track schemas that need to be loaded
+                    if prompt.input_schema:
+                        schemas_to_load.add(prompt.input_schema)
+                    if prompt.output_schema:
+                        schemas_to_load.add(prompt.output_schema)
+
                     manager._logger.info(
-                        "yaml_loaded",
+                        "yaml_prompt_loaded",
                         file=str(yaml_file),
-                        count=count,
+                        prompt_id=prompt.id,
+                        version=prompt.version,
                     )
+
                 except Exception as e:
                     manager._logger.warning(
                         "yaml_load_failed",
@@ -169,9 +188,78 @@ class PromptManager:
                     total_files=len(yaml_files),
                 )
 
+            # Auto-discover and load schemas
+            if schemas_to_load:
+                manager._auto_load_schemas(prompt_dir, schemas_to_load)
+
         return manager
 
-    async def render_and_parse(
+    def _auto_load_schemas(self, prompt_dir: Path, schema_names: set[str]) -> None:
+        """
+        Auto-discover and load schemas referenced by prompts.
+
+        Looks for schemas in:
+        1. {prompt_dir}/schemas/{schema_name}.yaml
+        2. {prompt_dir}/../schemas/{schema_name}.yaml
+
+        Args:
+            prompt_dir: Prompt directory
+            schema_names: Set of schema names to load
+        """
+        # Possible schema directories
+        schema_dirs = [
+            prompt_dir / "schemas",  # prompts/schemas/
+            prompt_dir.parent / "schemas",  # examples/schemas/ (if prompt_dir is examples/prompts/)
+        ]
+
+        loaded_schemas: set[str] = set()
+
+        for schema_name in schema_names:
+            for schema_dir in schema_dirs:
+                if not schema_dir.exists():
+                    continue
+
+                # Try .yaml and .yml extensions
+                schema_files = [
+                    schema_dir / f"{schema_name}.yaml",
+                    schema_dir / f"{schema_name}.yml",
+                ]
+
+                for schema_file in schema_files:
+                    if schema_file.exists() and schema_name not in loaded_schemas:
+                        try:
+                            registry = self._schema_loader.load_file(schema_file)
+                            loaded_schemas.add(schema_name)
+
+                            self._logger.info(
+                                "schema_auto_loaded",
+                                schema_name=schema_name,
+                                file=str(schema_file),
+                                schema_count=len(registry.schemas),
+                            )
+                            break  # Found and loaded, no need to check other paths
+
+                        except Exception as e:
+                            self._logger.warning(
+                                "schema_auto_load_failed",
+                                schema_name=schema_name,
+                                file=str(schema_file),
+                                error=str(e),
+                            )
+
+                if schema_name in loaded_schemas:
+                    break  # Schema loaded, no need to check other directories
+
+        # Warn about schemas that couldn't be loaded
+        missing_schemas = schema_names - loaded_schemas
+        if missing_schemas:
+            self._logger.warning(
+                "schemas_not_found",
+                missing_schemas=list(missing_schemas),
+                searched_dirs=[str(d) for d in schema_dirs],
+            )
+
+    def render_and_parse(
         self,
         prompt_id: str,
         variables: Mapping[str, Any],
@@ -199,50 +287,102 @@ class PromptManager:
         Raises:
             SchemaValidationError: If input or output validation fails
             PromptNotFoundError: If prompt not found
+
+        Example:
+            >>> manager = PromptManager()
+            >>> result = manager.render_and_parse("greeting", {"name": "Alice"}, response_json)
         """
         # Get prompt to check for output schema
-        prompt = await self._registry.get(prompt_id, version)
+        prompt = self._registry.get(prompt_id, version)
 
         # Render with input validation (returns string for LLM)
-        _ = await self.render(prompt_id, variables, version=version, validate_input=True)
+        _ = self.render(prompt_id, variables, version=version, validate_input=True)
 
         # Parse response if it's a string
         if isinstance(llm_response, str):
             import json
             llm_response = json.loads(llm_response)
 
-        # Validate output if schema defined
+        # Validate output if schema defined (updated to use new API)
         if prompt.output_schema:
-            return await self.validate_output(prompt.output_schema, llm_response)
+            return self.validate_output(prompt_id, llm_response, version=version)
 
         return llm_response
 
-    async def validate_output(
+    def validate_output(
         self,
-        schema_name: str,
+        prompt_id: str,
         output_data: dict[str, Any],
+        *,
+        version: str | None = None,
     ) -> dict[str, Any]:
         """
-        Validate LLM output against a schema.
+        Validate LLM output against prompt's output schema.
+
+        This method automatically looks up the output schema from the prompt definition,
+        removing the need for users to know schema names.
 
         Args:
-            schema_name: Name of the output schema
+            prompt_id: ID of the prompt (uses its output_schema field)
             output_data: LLM output to validate
+            version: Optional specific version of prompt
 
         Returns:
             Validated data
 
         Raises:
+            PromptNotFoundError: If prompt doesn't exist
+            ValueError: If prompt has no output_schema defined
             SchemaValidationError: If validation fails
+
+        Example:
+            >>> # Simple - just pass prompt_id
+            >>> validated = manager.validate_output("text_summarization", llm_response)
+            >>>
+            >>> # With specific version
+            >>> validated = manager.validate_output("text_summarization", llm_response, version="1.0.0")
         """
-        self._logger.info("validating_output", schema=schema_name)
+        # 1. Get the prompt to find its output_schema
+        prompt = self.get_prompt(prompt_id, version=version)
 
-        validated = await self._schema_loader.validate_data(schema_name, output_data)
+        # 2. Check that it has an output_schema defined
+        if not prompt.output_schema:
+            msg = (
+                f"Prompt '{prompt_id}' has no output_schema defined. "
+                f"Cannot validate output without a schema. "
+                f"Add an output_schema field to the prompt YAML file."
+            )
+            raise ValueError(msg)
 
-        self._logger.info("output_validated", schema=schema_name)
+        # 3. Validate that the schema is actually loaded
+        schema = self._schema_loader.get_schema(prompt.output_schema)
+        if not schema:
+            msg = (
+                f"Output schema '{prompt.output_schema}' referenced by prompt '{prompt_id}' is not loaded. "
+                f"Ensure the schema file exists in the schemas/ directory and has been loaded."
+            )
+            from prompt_manager.exceptions import SchemaValidationError
+            raise SchemaValidationError(msg, schema=prompt.output_schema)
+
+        # 4. Log and validate using the schema name
+        self._logger.info(
+            "validating_output",
+            prompt_id=prompt_id,
+            schema=prompt.output_schema,
+            version=prompt.version,
+        )
+
+        validated = self._schema_loader.validate_data(prompt.output_schema, output_data)
+
+        self._logger.info(
+            "output_validated",
+            prompt_id=prompt_id,
+            schema=prompt.output_schema,
+        )
+
         return validated
 
-    async def load_schemas(self, schema_path: Path) -> int:
+    def load_schemas(self, schema_path: Path) -> int:
         """
         Load validation schemas from a file or directory.
 
@@ -254,21 +394,25 @@ class PromptManager:
 
         Raises:
             SchemaParseError: If loading fails
+            ValueError: If schema path does not exist
+
+        Example:
+            >>> count = manager.load_schemas(Path("schemas/user.json"))
         """
         self._logger.info("loading_schemas", path=str(schema_path))
 
         if schema_path.is_file():
-            registry = await self._schema_loader.load_file(schema_path)
+            registry = self._schema_loader.load_file(schema_path)
             return len(registry.schemas)
         elif schema_path.is_dir():
-            registries = await self._schema_loader.load_directory(schema_path)
+            registries = self._schema_loader.load_directory(schema_path)
             total = sum(len(reg.schemas) for reg in registries)
             return total
         else:
             msg = f"Schema path does not exist: {schema_path}"
             raise ValueError(msg)
 
-    async def create_prompt(
+    def create_prompt(
         self,
         prompt: Prompt,
         *,
@@ -288,6 +432,10 @@ class PromptManager:
 
         Raises:
             PromptValidationError: If prompt is invalid
+
+        Example:
+            >>> prompt = Prompt(...)
+            >>> result = manager.create_prompt(prompt)
         """
         self._logger.info(
             "creating_prompt",
@@ -296,7 +444,7 @@ class PromptManager:
         )
 
         # Register in registry
-        await self._registry.register(prompt)
+        self._registry.register(prompt)
 
         # Create version record
         if self._version_store:
@@ -306,15 +454,15 @@ class PromptManager:
                 created_by=created_by,
                 changelog=changelog,
             )
-            await self._version_store.save_version(version)
+            self._version_store.save_version(version)
 
             # Notify observers
             for observer in self._observers:
-                await observer.on_version_created(version)
+                observer.on_version_created(version)
 
         return prompt
 
-    async def get_prompt(
+    def get_prompt(
         self,
         prompt_id: str,
         version: str | None = None,
@@ -331,10 +479,13 @@ class PromptManager:
 
         Raises:
             PromptNotFoundError: If prompt not found
-        """
-        return await self._registry.get(prompt_id, version)
 
-    async def update_prompt(
+        Example:
+            >>> prompt = manager.get_prompt("greeting")
+        """
+        return self._registry.get(prompt_id, version)
+
+    def update_prompt(
         self,
         prompt: Prompt,
         *,
@@ -356,6 +507,9 @@ class PromptManager:
 
         Raises:
             PromptNotFoundError: If prompt doesn't exist
+
+        Example:
+            >>> updated_prompt = manager.update_prompt(prompt)
         """
         self._logger.info(
             "updating_prompt",
@@ -366,7 +520,7 @@ class PromptManager:
 
         # Get current version for parent tracking
         try:
-            current = await self._registry.get(prompt.id)
+            current = self._registry.get(prompt.id)
             parent_version = current.version
         except PromptError:
             parent_version = None
@@ -376,7 +530,7 @@ class PromptManager:
             prompt.bump_version()
 
         # Update in registry
-        await self._registry.register(prompt)
+        self._registry.register(prompt)
 
         # Create version record
         if self._version_store:
@@ -387,19 +541,19 @@ class PromptManager:
                 changelog=changelog,
                 parent_version=parent_version,
             )
-            await self._version_store.save_version(version)
+            self._version_store.save_version(version)
 
             # Notify observers
             for observer in self._observers:
-                await observer.on_version_created(version)
+                observer.on_version_created(version)
 
         # Invalidate cache
         if self._cache:
-            await self._cache.invalidate(f"prompt:{prompt.id}:*")
+            self._cache.invalidate(f"prompt:{prompt.id}:*")
 
         return prompt
 
-    async def render(
+    def render(
         self,
         prompt_id: str,
         variables: Mapping[str, Any],
@@ -427,17 +581,21 @@ class PromptManager:
             PromptNotFoundError: If prompt not found
             TemplateError: If rendering fails
             SchemaValidationError: If input validation fails
+
+        Example:
+            >>> manager = PromptManager()
+            >>> result = manager.render("greeting", {"name": "Alice"})
         """
         start_time = time.perf_counter()
 
         # Get prompt
-        prompt = await self._registry.get(prompt_id, version)
+        prompt = self._registry.get(prompt_id, version)
         version = prompt.version
 
         # Auto-validate input if schema is defined
         if validate_input and prompt.input_schema:
             self._logger.debug("validating_input", schema=prompt.input_schema)
-            variables = await self._schema_loader.validate_data(
+            variables = self._schema_loader.validate_data(
                 prompt.input_schema,
                 dict(variables)
             )
@@ -450,36 +608,36 @@ class PromptManager:
 
         # Notify observers
         for observer in self._observers:
-            await observer.on_render_start(prompt_id, version, variables)
+            observer.on_render_start(prompt_id, version, variables)
 
         # Check cache
         cache_key = self._make_cache_key(prompt_id, version, variables)
         if use_cache and self._cache:
-            cached = await self._cache.get(cache_key)
+            cached = self._cache.get(cache_key)
             if cached:
                 if self._metrics:
-                    await self._metrics.record_cache_hit(prompt_id)
+                    self._metrics.record_cache_hit(prompt_id)
                 self._logger.debug("cache_hit", prompt_id=prompt_id)
                 return cached
 
             if self._metrics:
-                await self._metrics.record_cache_miss(prompt_id)
+                self._metrics.record_cache_miss(prompt_id)
 
         # Render based on format
         try:
             if prompt.format == PromptFormat.CHAT:
-                rendered = await self._render_chat(prompt, variables)
+                rendered = self._render_chat(prompt, variables)
             else:
-                rendered = await self._render_text(prompt, variables)
+                rendered = self._render_text(prompt, variables)
 
             # Cache result
             if use_cache and self._cache:
-                await self._cache.set(cache_key, rendered)
+                self._cache.set(cache_key, rendered)
 
             # Record metrics
             duration_ms = (time.perf_counter() - start_time) * 1000
             if self._metrics:
-                await self._metrics.record_render(
+                self._metrics.record_render(
                     prompt_id,
                     version,
                     duration_ms,
@@ -498,7 +656,7 @@ class PromptManager:
 
             # Notify observers
             for observer in self._observers:
-                await observer.on_render_complete(prompt_id, version, execution)
+                observer.on_render_complete(prompt_id, version, execution)
 
             self._logger.info(
                 "prompt_rendered",
@@ -523,7 +681,7 @@ class PromptManager:
 
             # Record metrics
             if self._metrics:
-                await self._metrics.record_render(
+                self._metrics.record_render(
                     prompt_id,
                     version,
                     duration_ms,
@@ -532,7 +690,7 @@ class PromptManager:
 
             # Notify observers
             for observer in self._observers:
-                await observer.on_render_error(prompt_id, version, e)
+                observer.on_render_error(prompt_id, version, e)
 
             self._logger.error(
                 "render_failed",
@@ -543,7 +701,7 @@ class PromptManager:
 
             raise
 
-    async def _render_text(
+    def _render_text(
         self,
         prompt: Prompt,
         variables: Mapping[str, Any],
@@ -554,56 +712,52 @@ class PromptManager:
             raise TemplateError(msg)
 
         # Render the main content
-        content = await self._template_engine.render(
+        content = self._template_engine.render(
             prompt.template.content,
             variables,
             partials=prompt.template.partials,
         )
 
         # Inject schema descriptions if present
-        return await self._inject_schema_descriptions(prompt, content)
+        return self._inject_schema_descriptions(prompt, content)
 
-    async def _inject_schema_descriptions(
+    def _inject_schema_descriptions(
         self,
         prompt: Prompt,
         content: str,
     ) -> str:
-        """Inject input/output schema descriptions into rendered content."""
+        """
+        Inject output schema descriptions into rendered content.
+
+        Note: Input schemas are for VALIDATION ONLY and should never appear in the prompt.
+        This prevents token waste and ensures clean prompt output.
+
+        Output schemas are injected to guide LLM responses with structured output requirements.
+        """
         parts = []
 
-        # Add input schema description as intro
-        if prompt.input_schema:
-            schema = self._schema_loader.get_schema(prompt.input_schema)
-            if schema:
-                intro = self._format_input_schema_description(schema)
-                parts.append(intro)
+        # REMOVED: Input schema injection (Issue #1)
+        # Input schemas should ONLY validate input variables, never appear in rendered output.
+        # This was previously adding unnecessary tokens to prompts sent to LLMs.
 
         # Add main content
         parts.append(content)
 
-        # Add output schema description as ending
+        # Add output schema description as ending (Issue #2: Added validation)
         if prompt.output_schema:
+            # Validate that the schema is actually loaded before attempting to use it
             schema = self._schema_loader.get_schema(prompt.output_schema)
-            if schema:
-                ending = self._format_output_schema_description(schema)
-                parts.append(ending)
+            if not schema:
+                msg = (
+                    f"Output schema '{prompt.output_schema}' is defined but not loaded. "
+                    f"Please load the schema using manager.load_schemas() before rendering."
+                )
+                raise PromptError(msg)
+
+            ending = self._format_output_schema_description(schema)
+            parts.append(ending)
 
         return "\n\n".join(parts)
-
-    def _format_input_schema_description(self, schema: Any) -> str:
-        """Format input schema as description text."""
-        lines = ["# Input Requirements", ""]
-        if schema.description:
-            lines.append(schema.description)
-            lines.append("")
-
-        lines.append("Expected input fields:")
-        for field in schema.fields:
-            required = "required" if field.required else "optional"
-            desc = field.description or "No description"
-            lines.append(f"- {field.name} ({field.type}, {required}): {desc}")
-
-        return "\n".join(lines)
 
     def _format_output_schema_description(self, schema: Any) -> str:
         """Format output schema as description text with structured output instructions."""
@@ -657,7 +811,7 @@ class PromptManager:
 
         return "\n".join(lines)
 
-    async def _render_chat(
+    def _render_chat(
         self,
         prompt: Prompt,
         variables: Mapping[str, Any],
@@ -671,7 +825,7 @@ class PromptManager:
         messages = [msg.model_dump() for msg in prompt.chat_template.messages]
 
         # Render messages
-        rendered_messages = await self._chat_template_engine.render_messages(
+        rendered_messages = self._chat_template_engine.render_messages(
             messages,
             variables,
         )
@@ -686,9 +840,9 @@ class PromptManager:
         formatted_chat = "\n\n".join(parts)
 
         # Inject schema descriptions if present
-        return await self._inject_schema_descriptions(prompt, formatted_chat)
+        return self._inject_schema_descriptions(prompt, formatted_chat)
 
-    async def render_for_plugin(
+    def render_for_plugin(
         self,
         prompt_id: str,
         variables: Mapping[str, Any],
@@ -710,6 +864,10 @@ class PromptManager:
 
         Raises:
             PluginNotFoundError: If plugin not found
+
+        Example:
+            >>> manager = PromptManager()
+            >>> result = manager.render_for_plugin("greeting", {"name": "Alice"}, "openai")
         """
         plugin = self._plugins.get(plugin_name)
         if not plugin:
@@ -717,15 +875,16 @@ class PromptManager:
 
             raise PluginNotFoundError(plugin_name)
 
-        prompt = await self._registry.get(prompt_id, version)
-        return await plugin.render_for_framework(prompt, variables)
+        prompt = self._registry.get(prompt_id, version)
+        return plugin.render_for_framework(prompt, variables)
 
-    async def list_prompts(
+    def list_prompts(
         self,
         *,
         tags: list[str] | None = None,
         status: str | None = None,
         category: str | None = None,
+        format: PromptFormat | None = None,
     ) -> list[Prompt]:
         """
         List prompts with filtering.
@@ -734,17 +893,23 @@ class PromptManager:
             tags: Filter by tags
             status: Filter by status
             category: Filter by category
+            format: Filter by format
 
         Returns:
             List of matching prompts
+
+        Example:
+            >>> prompts = manager.list_prompts(tags=["greeting"])
+            >>> text_prompts = manager.list_prompts(format=PromptFormat.TEXT)
         """
-        return await self._registry.list(
+        return self._registry.list(
             tags=tags,
             status=status,
             category=category,
+            format=format,
         )
 
-    async def get_history(
+    def get_history(
         self,
         prompt_id: str,
         *,
@@ -764,15 +929,56 @@ class PromptManager:
 
         Raises:
             PromptNotFoundError: If prompt not found
+
+        Example:
+            >>> history = manager.get_history("greeting")
         """
         if not self._version_store:
             return []
 
-        return await self._version_store.get_history(
+        return self._version_store.get_history(
             prompt_id,
             since=since,
             until=until,
         )
+
+    def compare_versions(
+        self,
+        prompt_id: str,
+        version1: str,
+        version2: str,
+    ) -> dict[str, Any]:
+        """
+        Compare two versions and return differences.
+
+        Args:
+            prompt_id: Prompt identifier
+            version1: First version (older)
+            version2: Second version (newer)
+
+        Returns:
+            Dictionary of differences with keys:
+            - versions: {"from": version1, "to": version2}
+            - checksums_differ: bool
+            - status_changed: bool
+            - template_changed: bool
+            - metadata_changed: bool
+
+        Raises:
+            PromptNotFoundError: If prompt not found
+            VersionNotFoundError: If either version doesn't exist
+
+        Example:
+            >>> diff = manager.compare_versions("greeting", "1.0.0", "1.0.1")
+            >>> print(diff["versions"])  # {"from": "1.0.0", "to": "1.0.1"}
+        """
+        if not self._version_store:
+            return {
+                "versions": {"from": version1, "to": version2},
+                "error": "No version store configured",
+            }
+
+        return self._version_store.compare_versions(prompt_id, version1, version2)
 
     def register_plugin(self, plugin: PluginProtocol) -> None:
         """
@@ -805,7 +1011,7 @@ class PromptManager:
         var_str = "|".join(f"{k}={v}" for k, v in sorted(variables.items()))
         return f"prompt:{prompt_id}:{version}:{hash(var_str)}"
 
-    async def get_metrics(
+    def get_metrics(
         self,
         *,
         since: datetime | None = None,
@@ -817,13 +1023,16 @@ class PromptManager:
             since: Only metrics after this time
 
         Returns:
-            Metrics dictionary
+            Metrics dictionary containing registry stats and optional operation metrics
+
+        Example:
+            >>> metrics = manager.get_metrics()
         """
         metrics = {
-            "registry": await self._registry.get_stats(),
+            "registry": self._registry.get_stats(),
         }
 
         if self._metrics:
-            metrics["operations"] = await self._metrics.get_metrics(since=since)
+            metrics["operations"] = self._metrics.get_metrics(since=since)
 
         return metrics

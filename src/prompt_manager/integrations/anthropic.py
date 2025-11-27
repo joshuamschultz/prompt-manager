@@ -45,7 +45,7 @@ class AnthropicIntegration(BaseIntegration[AnthropicRequest]):
         https://docs.anthropic.com/claude/reference/messages_post
     """
 
-    async def convert(
+    def convert(
         self,
         prompt: Prompt,
         variables: Mapping[str, Any],
@@ -64,7 +64,7 @@ class AnthropicIntegration(BaseIntegration[AnthropicRequest]):
             ConversionError: If conversion fails or validation fails
 
         Example:
-            >>> result = await integration.convert(prompt, {"user": "Alice"})
+            >>> result = integration.convert(prompt, {"user": "Alice"})
             >>> # {"system": "...", "messages": [...]}
         """
         if prompt.format != PromptFormat.CHAT:
@@ -87,7 +87,7 @@ class AnthropicIntegration(BaseIntegration[AnthropicRequest]):
         try:
             for message in prompt.chat_template.messages:
                 # Render message content
-                rendered_content = await self._template_engine.render(
+                rendered_content = self._template_engine.render(
                     message.content,
                     variables,
                 )

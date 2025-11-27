@@ -1,0 +1,70 @@
+id: data_analysis
+version: 1.0.0
+uid: 3cd14ea5-50f6-41b2-8f09-c119d4448cf5
+format: chat
+template: null
+chat_template:
+  messages:
+  - role: system
+    content: 'You are an expert data analyst. Analyze the provided data and:
+
+      - Identify patterns and trends
+
+      - Calculate relevant statistics
+
+      - Provide insights and recommendations
+
+      - Suggest visualizations
+
+
+      Present findings clearly with supporting evidence.
+
+      '
+    name: null
+    function_call: null
+    tool_calls: null
+  - role: user
+    content: 'Analyze this {{data_type}} data:
+
+
+      {{data}}
+
+
+      Analysis goals: {{goals}}
+
+
+      {{#if context}}
+
+      Additional context: {{context}}
+
+      {{/if}}
+
+      '
+    name: null
+    function_call: null
+    tool_calls: null
+  variables:
+  - data_type
+  - data
+  - goals
+  - context
+status: active
+created_at: '2025-11-26T21:57:20.128708'
+updated_at: '2025-11-26T21:57:20.128710'
+metadata:
+  author: Data Team
+  description: AI-powered data analysis
+  tags:
+  - data-analysis
+  - statistics
+  - insights
+  category: analytics
+  use_cases: []
+  model_recommendations:
+  - gpt-4
+  - claude-3-opus
+  temperature: 0.5
+  max_tokens: 3000
+  custom: {}
+input_schema: data_analysis_input
+output_schema: null

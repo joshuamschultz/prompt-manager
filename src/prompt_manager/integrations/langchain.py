@@ -48,12 +48,12 @@ class LangChainIntegration(BaseIntegration[Any]):
         >>>
         >>> # TEXT format
         >>> text_prompt = Prompt(id="simple", format=PromptFormat.TEXT, ...)
-        >>> lc_template = await integration.convert(text_prompt, {})
+        >>> lc_template = integration.convert(text_prompt, {})
         >>> # Returns: PromptTemplate(input_variables=[...], template="...")
         >>>
         >>> # CHAT format
         >>> chat_prompt = Prompt(id="chat", format=PromptFormat.CHAT, ...)
-        >>> lc_chat = await integration.convert(chat_prompt, {})
+        >>> lc_chat = integration.convert(chat_prompt, {})
         >>> # Returns: ChatPromptTemplate(...)
 
     Reference:
@@ -73,7 +73,7 @@ class LangChainIntegration(BaseIntegration[Any]):
             )
         super().__init__(*args, **kwargs)
 
-    async def convert(
+    def convert(
         self,
         prompt: Prompt,
         variables: Mapping[str, Any],
@@ -94,15 +94,15 @@ class LangChainIntegration(BaseIntegration[Any]):
             IntegrationNotAvailableError: If langchain-core not installed
 
         Example:
-            >>> lc_template = await integration.convert(prompt, {})
+            >>> lc_template = integration.convert(prompt, {})
             >>> # Use with LangChain: result = lc_template.format(**variables)
         """
         if prompt.format == PromptFormat.CHAT:
-            return await self._convert_chat(prompt)
+            return self._convert_chat(prompt)
         else:
-            return await self._convert_text(prompt)
+            return self._convert_text(prompt)
 
-    async def _convert_chat(self, prompt: Prompt) -> ChatPromptTemplate:
+    def _convert_chat(self, prompt: Prompt) -> ChatPromptTemplate:
         """Convert CHAT format to ChatPromptTemplate.
 
         Args:
@@ -150,7 +150,7 @@ class LangChainIntegration(BaseIntegration[Any]):
                 cause=e,
             ) from e
 
-    async def _convert_text(self, prompt: Prompt) -> PromptTemplate:
+    def _convert_text(self, prompt: Prompt) -> PromptTemplate:
         """Convert TEXT format to PromptTemplate.
 
         Args:

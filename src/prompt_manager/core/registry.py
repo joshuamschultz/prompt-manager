@@ -6,12 +6,11 @@ Provides CRUD operations, filtering, and integration with storage backends.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from typing import Any
 
 import structlog
 
-from prompt_manager.core.models import Prompt, PromptStatus
+from prompt_manager.core.models import Prompt, PromptFormat, PromptStatus
 from prompt_manager.core.protocols import ObserverProtocol, StorageBackendProtocol
 from prompt_manager.exceptions import PromptNotFoundError, PromptValidationError
 
@@ -42,7 +41,7 @@ class PromptRegistry:
         self._observers = observers or []
         self._logger = logger.bind(component="registry")
 
-    async def register(self, prompt: Prompt, *, persist: bool = True) -> None:
+    def register(self, prompt: Prompt, *, persist: bool = True) -> None:
         """
         Register a prompt in the registry.
 
@@ -74,11 +73,11 @@ class PromptRegistry:
 
         # Persist to storage if requested
         if persist and self._storage:
-            await self._storage.save(prompt)
+            self._storage.save(prompt)
 
         # Notify observers
         for observer in self._observers:
-            await observer.on_prompt_registered(prompt)
+            observer.on_prompt_registered(prompt)
 
         self._logger.info(
             "prompt_registered",
@@ -87,9 +86,7 @@ class PromptRegistry:
             persisted=persist and self._storage is not None,
         )
 
-    async def get(
-        self, prompt_id: str, version: str | None = None
-    ) -> Prompt:
+    def get(self, prompt_id: str, version: str | None = None) -> Prompt:
         """
         Get a prompt by ID and optional version.
 
@@ -127,7 +124,7 @@ class PromptRegistry:
         )
         return versions[sorted_versions[0]]
 
-    async def update(self, prompt: Prompt, *, persist: bool = True) -> None:
+    def update(self, prompt: Prompt, *, persist: bool = True) -> None:
         """
         Update an existing prompt.
 
@@ -151,15 +148,15 @@ class PromptRegistry:
 
         # Persist to storage
         if persist and self._storage:
-            await self._storage.save(prompt)
+            self._storage.save(prompt)
 
         # Notify observers
         for observer in self._observers:
-            await observer.on_prompt_updated(prompt)
+            observer.on_prompt_updated(prompt)
 
         self._logger.info("prompt_updated", prompt_id=prompt.id, version=prompt.version)
 
-    async def delete(
+    def delete(
         self, prompt_id: str, version: str | None = None, *, persist: bool = True
     ) -> None:
         """
@@ -192,11 +189,11 @@ class PromptRegistry:
 
             # Persist deletion
             if persist and self._storage:
-                await self._storage.delete(prompt_id, version)
+                self._storage.delete(prompt_id, version)
 
             # Notify observers
             for observer in self._observers:
-                await observer.on_prompt_deleted(prompt)
+                observer.on_prompt_deleted(prompt)
         else:
             # Delete all versions
             prompts = list(self._prompts[prompt_id].values())
@@ -204,21 +201,22 @@ class PromptRegistry:
 
             # Persist deletion
             if persist and self._storage:
-                await self._storage.delete(prompt_id)
+                self._storage.delete(prompt_id)
 
             # Notify observers
             for observer in self._observers:
                 for prompt in prompts:
-                    await observer.on_prompt_deleted(prompt)
+                    observer.on_prompt_deleted(prompt)
 
         self._logger.info("prompt_deleted", prompt_id=prompt_id, version=version)
 
-    async def list(
+    def list(
         self,
         *,
         status: PromptStatus | None = None,
         tags: list[str] | None = None,
         category: str | None = None,
+        format: PromptFormat | None = None,
         limit: int | None = None,
         offset: int = 0,
     ) -> list[Prompt]:
@@ -229,6 +227,7 @@ class PromptRegistry:
             status: Filter by status
             tags: Filter by tags (prompts must have ALL tags)
             category: Filter by category
+            format: Filter by format
             limit: Maximum number of results
             offset: Number of results to skip
 
@@ -240,6 +239,7 @@ class PromptRegistry:
             status=status,
             tags=tags,
             category=category,
+            format=format,
             limit=limit,
             offset=offset,
         )
@@ -268,6 +268,9 @@ class PromptRegistry:
             if category and latest.metadata.category != category:
                 continue
 
+            if format and latest.format != format:
+                continue
+
             prompts.append(latest)
 
         # Sort by ID for consistency
@@ -278,7 +281,7 @@ class PromptRegistry:
         end = offset + limit if limit else None
         return prompts[start:end]
 
-    async def get_versions(self, prompt_id: str) -> list[str]:
+    def get_versions(self, prompt_id: str) -> list[str]:
         """
         Get all versions for a prompt.
 
@@ -298,7 +301,7 @@ class PromptRegistry:
         versions.sort(key=lambda v: tuple(map(int, v.split("."))), reverse=True)
         return versions
 
-    async def exists(self, prompt_id: str, version: str | None = None) -> bool:
+    def exists(self, prompt_id: str, version: str | None = None) -> bool:
         """
         Check if a prompt exists.
 
@@ -317,7 +320,7 @@ class PromptRegistry:
 
         return len(self._prompts[prompt_id]) > 0
 
-    async def count(
+    def count(
         self,
         *,
         status: PromptStatus | None = None,
@@ -335,10 +338,10 @@ class PromptRegistry:
         Returns:
             Number of matching prompts
         """
-        prompts = await self.list(status=status, tags=tags, category=category)
+        prompts = self.list(status=status, tags=tags, category=category)
         return len(prompts)
 
-    async def clear(self, *, persist: bool = True) -> None:
+    def clear(self, *, persist: bool = True) -> None:
         """
         Clear all prompts from registry.
 
@@ -356,7 +359,7 @@ class PromptRegistry:
         if persist and self._storage:
             # Note: This requires storage backend to implement clear()
             if hasattr(self._storage, "clear"):
-                await self._storage.clear()
+                self._storage.clear()
 
         self._logger.warning("registry_cleared", prompt_count=prompt_count)
 
@@ -413,7 +416,7 @@ class PromptRegistry:
             self._observers.remove(observer)
             self._logger.info("observer_removed", observer=type(observer).__name__)
 
-    async def load_from_storage(self) -> int:
+    def load_from_storage(self) -> int:
         """
         Load all prompts from storage backend.
 
@@ -429,11 +432,12 @@ class PromptRegistry:
 
         self._logger.info("loading_from_storage")
 
-        prompts = await self._storage.load_all()
+        # Use list() method which returns all latest prompts
+        prompts = self._storage.list()
         count = 0
 
         for prompt in prompts:
-            await self.register(prompt, persist=False)  # Already in storage
+            self.register(prompt, persist=False)  # Already in storage
             count += 1
 
         self._logger.info("loaded_from_storage", count=count)

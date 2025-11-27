@@ -24,7 +24,7 @@ def anthropic_integration(template_engine):
 
 class TestAnthropicChatE2E:
     @pytest.mark.integration
-    async def test_chat_with_system_message(self, anthropic_integration):
+    def test_chat_with_system_message(self, anthropic_integration):
         """Test chat prompt with system message."""
         prompt = Prompt(
             id="test",
@@ -37,7 +37,7 @@ class TestAnthropicChatE2E:
             ),
         )
 
-        result = await anthropic_integration.convert(
+        result = anthropic_integration.convert(
             prompt,
             {"assistant_role": "helpful assistant", "question": "Hello?"},
         )
@@ -49,7 +49,7 @@ class TestAnthropicChatE2E:
         assert result["messages"][0]["role"] == "user"
 
     @pytest.mark.integration
-    async def test_message_alternation(self, anthropic_integration):
+    def test_message_alternation(self, anthropic_integration):
         """Test message alternation validation."""
         prompt = Prompt(
             id="test",
@@ -63,7 +63,7 @@ class TestAnthropicChatE2E:
             ),
         )
 
-        result = await anthropic_integration.convert(prompt, {})
+        result = anthropic_integration.convert(prompt, {})
 
         assert len(result["messages"]) == 3
         assert result["messages"][0]["role"] == "user"

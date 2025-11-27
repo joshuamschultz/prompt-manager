@@ -1,10 +1,18 @@
-"""File system storage backend with JSON persistence."""
+"""
+File system storage backend with YAML as single source of truth.
+
+Storage Strategy:
+- YAML files (prompts/{id}.yaml) are the single source of truth for current prompt versions
+- YAML snapshots (prompts/{id}/_versions/{version}.yaml) are created for version history
+- YAML format is preferred because it uses fewer tokens for LLMs to process
+- All reads prefer YAML; supports legacy JSON snapshots for backward compatibility
+"""
 
 import json
 from pathlib import Path
 
-import aiofiles
 import structlog
+import yaml
 
 from prompt_manager.core.models import Prompt
 from prompt_manager.exceptions import (
@@ -21,24 +29,37 @@ class FileSystemStorage:
     """
     File system storage backend implementing StorageBackendProtocol.
 
-    Stores prompts as JSON files in a directory structure:
-    {base_path}/{prompt_id}/{version}.json
+    Storage structure:
+    - Current version: {base_path}/{prompt_id}.yaml (YAML - single source of truth)
+    - Version history: {base_path}/{prompt_id}/_versions/{version}.yaml (YAML snapshots)
+
+    Why YAML everywhere?
+    - Fewer tokens for LLMs to process
+    - More human-readable for editing
+    - Cleaner diffs in version control
+    - Consistent format across all storage
     """
 
-    def __init__(self, base_path: Path) -> None:
+    def __init__(self, base_path: Path, save_version_snapshots: bool = True) -> None:
         """
         Initialize file system storage.
 
         Args:
             base_path: Base directory for storage
+            save_version_snapshots: Whether to save YAML version snapshots (default: True)
         """
         self._base_path = base_path
         self._base_path.mkdir(parents=True, exist_ok=True)
+        self._save_version_snapshots = save_version_snapshots
         self._logger = logger.bind(component="file_storage", path=str(base_path))
 
-    async def save(self, prompt: Prompt) -> None:
+    def save(self, prompt: Prompt) -> None:
         """
-        Save a prompt to file system.
+        Save a prompt to file system as YAML (current version and version snapshot).
+
+        Creates:
+        1. YAML file as single source of truth: {base_path}/{prompt_id}.yaml
+        2. Optional YAML snapshot for version history: {base_path}/{prompt_id}/_versions/{version}.yaml
 
         Args:
             prompt: Prompt to save
@@ -52,36 +73,70 @@ class FileSystemStorage:
             version=prompt.version,
         )
 
-        prompt_dir = self._base_path / prompt.id
-        prompt_dir.mkdir(parents=True, exist_ok=True)
-
-        filepath = prompt_dir / f"{prompt.version}.json"
-
         try:
-            # Serialize to JSON
+            # 1. Save current version as YAML (single source of truth)
+            yaml_filepath = self._base_path / f"{prompt.id}.yaml"
             data = prompt.model_dump(mode="json")
 
-            async with aiofiles.open(filepath, "w") as f:
-                await f.write(json.dumps(data, indent=2))
+            # Write YAML with clean formatting
+            with open(yaml_filepath, "w", encoding="utf-8") as f:
+                yaml.dump(
+                    data,
+                    f,
+                    default_flow_style=False,
+                    sort_keys=False,
+                    allow_unicode=True,
+                    indent=2,
+                )
 
             self._logger.info(
-                "prompt_saved",
+                "prompt_saved_yaml",
                 prompt_id=prompt.id,
                 version=prompt.version,
-                path=str(filepath),
+                path=str(yaml_filepath),
             )
+
+            # 2. Optionally save version snapshot as YAML for history
+            if self._save_version_snapshots:
+                version_dir = self._base_path / prompt.id / "_versions"
+                version_dir.mkdir(parents=True, exist_ok=True)
+
+                version_filepath = version_dir / f"{prompt.version}.yaml"
+
+                # Write YAML version snapshot with clean formatting
+                with open(version_filepath, "w", encoding="utf-8") as f:
+                    yaml.dump(
+                        data,
+                        f,
+                        default_flow_style=False,
+                        sort_keys=False,
+                        allow_unicode=True,
+                        indent=2,
+                    )
+
+                self._logger.debug(
+                    "version_snapshot_saved",
+                    prompt_id=prompt.id,
+                    version=prompt.version,
+                    path=str(version_filepath),
+                )
 
         except Exception as e:
             msg = f"Failed to save prompt {prompt.id}: {e}"
             raise StorageWriteError(msg) from e
 
-    async def load(self, prompt_id: str, version: str | None = None) -> Prompt:
+    def load(self, prompt_id: str, version: str | None = None) -> Prompt:
         """
         Load a prompt from file system.
 
+        Loading strategy:
+        - If no version specified: Load from YAML file (current version)
+        - If version specified: Load from YAML snapshot in _versions/ folder
+        - Falls back to legacy JSON format if YAML not found
+
         Args:
             prompt_id: Prompt identifier
-            version: Optional version (loads latest if None)
+            version: Optional version (loads latest from YAML if None)
 
         Returns:
             Loaded prompt
@@ -90,40 +145,58 @@ class FileSystemStorage:
             PromptNotFoundError: If prompt doesn't exist
             StorageReadError: If read fails
         """
-        prompt_dir = self._base_path / prompt_id
-
-        if not prompt_dir.exists():
-            raise PromptNotFoundError(prompt_id, version)
-
         try:
             if version:
-                filepath = prompt_dir / f"{version}.json"
-                if not filepath.exists():
+                # Try to load specific version from YAML snapshot (preferred)
+                yaml_version_file = self._base_path / prompt_id / "_versions" / f"{version}.yaml"
+                json_version_file = self._base_path / prompt_id / "_versions" / f"{version}.json"
+
+                if yaml_version_file.exists():
+                    with open(yaml_version_file, "r", encoding="utf-8") as f:
+                        data = yaml.safe_load(f)
+                        prompt = Prompt.model_validate(data)
+
+                    self._logger.debug(
+                        "prompt_loaded_from_yaml_snapshot",
+                        prompt_id=prompt_id,
+                        version=version,
+                    )
+                    return prompt
+
+                elif json_version_file.exists():
+                    # Legacy JSON support for backward compatibility
+                    with open(json_version_file, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        prompt = Prompt.model_validate(data)
+
+                    self._logger.debug(
+                        "prompt_loaded_from_json_snapshot",
+                        prompt_id=prompt_id,
+                        version=version,
+                    )
+                    return prompt
+
+                else:
                     raise PromptNotFoundError(prompt_id, version)
+
             else:
-                # Find latest version
-                version_files = list(prompt_dir.glob("*.json"))
-                if not version_files:
+                # Load current version from YAML file
+                yaml_file = self._base_path / f"{prompt_id}.yaml"
+
+                if not yaml_file.exists():
                     raise PromptNotFoundError(prompt_id, version)
 
-                # Get latest by semantic version
-                versions = [f.stem for f in version_files]
-                latest = max(versions, key=self._version_key)
-                filepath = prompt_dir / f"{latest}.json"
+                with open(yaml_file, "r", encoding="utf-8") as f:
+                    data = yaml.safe_load(f)
+                    prompt = Prompt.model_validate(data)
 
-            # Load and deserialize
-            async with aiofiles.open(filepath, "r") as f:
-                content = await f.read()
-                data = json.loads(content)
-                prompt = Prompt.model_validate(data)
+                self._logger.debug(
+                    "prompt_loaded_from_yaml",
+                    prompt_id=prompt_id,
+                    version=prompt.version,
+                )
 
-            self._logger.debug(
-                "prompt_loaded",
-                prompt_id=prompt_id,
-                version=prompt.version,
-            )
-
-            return prompt
+                return prompt
 
         except PromptNotFoundError:
             raise
@@ -131,9 +204,13 @@ class FileSystemStorage:
             msg = f"Failed to load prompt {prompt_id}: {e}"
             raise StorageReadError(msg) from e
 
-    async def delete(self, prompt_id: str, version: str | None = None) -> None:
+    def delete(self, prompt_id: str, version: str | None = None) -> None:
         """
         Delete a prompt from file system.
+
+        Deletion strategy:
+        - If version specified: Delete both YAML and JSON snapshots (if they exist)
+        - If no version: Delete YAML file and entire version history folder
 
         Args:
             prompt_id: Prompt identifier
@@ -143,26 +220,48 @@ class FileSystemStorage:
             PromptNotFoundError: If prompt doesn't exist
             StorageError: If delete fails
         """
-        prompt_dir = self._base_path / prompt_id
-
-        if not prompt_dir.exists():
-            raise PromptNotFoundError(prompt_id, version)
-
         try:
             if version:
-                filepath = prompt_dir / f"{version}.json"
-                if not filepath.exists():
+                # Delete specific version snapshot (both YAML and JSON if present)
+                yaml_version_file = self._base_path / prompt_id / "_versions" / f"{version}.yaml"
+                json_version_file = self._base_path / prompt_id / "_versions" / f"{version}.json"
+
+                found = False
+                if yaml_version_file.exists():
+                    yaml_version_file.unlink()
+                    found = True
+
+                if json_version_file.exists():
+                    json_version_file.unlink()
+                    found = True
+
+                if not found:
                     raise PromptNotFoundError(prompt_id, version)
-                filepath.unlink()
 
-                # Remove directory if empty
-                if not any(prompt_dir.iterdir()):
+                # Remove version directory if empty
+                version_dir = self._base_path / prompt_id / "_versions"
+                if version_dir.exists() and not any(version_dir.iterdir()):
+                    version_dir.rmdir()
+
+                # Remove prompt directory if empty
+                prompt_dir = self._base_path / prompt_id
+                if prompt_dir.exists() and not any(prompt_dir.iterdir()):
                     prompt_dir.rmdir()
-            else:
-                # Delete entire directory
-                import shutil
 
-                shutil.rmtree(prompt_dir)
+            else:
+                # Delete YAML file and entire version history
+                yaml_file = self._base_path / f"{prompt_id}.yaml"
+
+                if not yaml_file.exists():
+                    raise PromptNotFoundError(prompt_id, version)
+
+                yaml_file.unlink()
+
+                # Delete version history folder if it exists
+                prompt_dir = self._base_path / prompt_id
+                if prompt_dir.exists():
+                    import shutil
+                    shutil.rmtree(prompt_dir)
 
             self._logger.info(
                 "prompt_deleted",
@@ -176,7 +275,7 @@ class FileSystemStorage:
             msg = f"Failed to delete prompt {prompt_id}: {e}"
             raise StorageError(msg) from e
 
-    async def list(
+    def list(
         self,
         *,
         tags: list[str] | None = None,
@@ -184,6 +283,8 @@ class FileSystemStorage:
     ) -> list[Prompt]:
         """
         List prompts matching filters.
+
+        Loads only from YAML files (current versions), ignoring old JSON files.
 
         Args:
             tags: Filter by tags
@@ -198,16 +299,16 @@ class FileSystemStorage:
         prompts = []
 
         try:
-            # Iterate over prompt directories
-            for prompt_dir in self._base_path.iterdir():
-                if not prompt_dir.is_dir():
+            # Iterate over YAML files only (current versions)
+            for yaml_file in self._base_path.glob("*.yaml"):
+                if not yaml_file.is_file():
                     continue
 
-                prompt_id = prompt_dir.name
+                prompt_id = yaml_file.stem
 
-                # Load latest version
+                # Load current version
                 try:
-                    prompt = await self.load(prompt_id)
+                    prompt = self.load(prompt_id)
 
                     # Apply filters
                     if status and prompt.status.value != status:
@@ -234,7 +335,7 @@ class FileSystemStorage:
             msg = f"Failed to list prompts: {e}"
             raise StorageReadError(msg) from e
 
-    async def exists(self, prompt_id: str, version: str | None = None) -> bool:
+    def exists(self, prompt_id: str, version: str | None = None) -> bool:
         """
         Check if a prompt exists.
 
@@ -245,17 +346,15 @@ class FileSystemStorage:
         Returns:
             True if exists
         """
-        prompt_dir = self._base_path / prompt_id
-
-        if not prompt_dir.exists():
-            return False
-
         if version:
-            filepath = prompt_dir / f"{version}.json"
-            return filepath.exists()
-
-        # Check if any version exists
-        return any(prompt_dir.glob("*.json"))
+            # Check for specific version snapshot (YAML or JSON)
+            yaml_version_file = self._base_path / prompt_id / "_versions" / f"{version}.yaml"
+            json_version_file = self._base_path / prompt_id / "_versions" / f"{version}.json"
+            return yaml_version_file.exists() or json_version_file.exists()
+        else:
+            # Check for current YAML file
+            yaml_file = self._base_path / f"{prompt_id}.yaml"
+            return yaml_file.exists()
 
     @staticmethod
     def _version_key(version: str) -> tuple[int, int, int]:

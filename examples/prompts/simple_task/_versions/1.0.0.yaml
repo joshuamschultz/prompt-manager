@@ -1,0 +1,31 @@
+id: simple_task
+version: 1.0.0
+uid: 94fb79b2-ddd5-4063-9f3c-90fb8b9bd3cd
+format: text
+template:
+  content: 'You are a helpful assistant. The user''s task is: {{task}}
+
+
+    Please provide a clear and concise response.'
+  variables:
+  - task
+  partials: {}
+  helpers: {}
+chat_template: null
+status: active
+created_at: '2025-11-26T21:57:20.363250'
+updated_at: '2025-11-26T21:57:20.363253'
+metadata:
+  author: notebook_example
+  description: A simple task completion prompt
+  tags:
+  - task
+  - general
+  category: null
+  use_cases: []
+  model_recommendations: []
+  temperature: null
+  max_tokens: null
+  custom: {}
+input_schema: null
+output_schema: null

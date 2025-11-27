@@ -1,0 +1,29 @@
+id: evolving_prompt
+version: 1.1.0
+uid: 6c02e6b6-906b-4688-9966-967bf8f481cc
+format: text
+template:
+  content: 'Improved version with context: {{input}}
+
+    Context: {{context}}'
+  variables:
+  - input
+  - context
+  partials: {}
+  helpers: {}
+chat_template: null
+status: active
+created_at: '2025-11-26T21:42:58.525387'
+updated_at: '2025-11-26T21:42:58.525388'
+metadata:
+  author: null
+  description: Version 1.1.0 - Added context
+  tags: []
+  category: null
+  use_cases: []
+  model_recommendations: []
+  temperature: null
+  max_tokens: null
+  custom: {}
+input_schema: null
+output_schema: null

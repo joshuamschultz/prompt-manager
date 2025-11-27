@@ -72,8 +72,7 @@ class TestLangChainIntegration:
         )
 
     # Test: Text prompt conversion
-    @pytest.mark.asyncio
-    async def test_convert_text_prompt_to_prompt_template(
+    def test_convert_text_prompt_to_prompt_template(
         self, integration: LangChainIntegration, text_prompt: Prompt
     ) -> None:
         """Test converting TEXT prompt to LangChain PromptTemplate."""
@@ -82,15 +81,14 @@ class TestLangChainIntegration:
         variables = {"name": "Alice"}
 
         # Act
-        result = await integration.convert(text_prompt, variables)
+        result = integration.convert(text_prompt, variables)
 
         # Assert
         assert isinstance(result, PromptTemplate)
         # Verify the template uses f-string format
         assert "{name}" in result.template
 
-    @pytest.mark.asyncio
-    async def test_convert_text_prompt_with_multiple_variables(
+    def test_convert_text_prompt_with_multiple_variables(
         self, integration: LangChainIntegration
     ) -> None:
         """Test TEXT prompt conversion with multiple variables."""
@@ -108,7 +106,7 @@ class TestLangChainIntegration:
         )
 
         # Act
-        result = await integration.convert(prompt, {})
+        result = integration.convert(prompt, {})
 
         # Assert
         assert isinstance(result, LCPromptTemplate)
@@ -117,8 +115,7 @@ class TestLangChainIntegration:
         assert "{age}" in result.template
         assert "{{" not in result.template
 
-    @pytest.mark.asyncio
-    async def test_convert_text_prompt_missing_template_raises_error(
+    def test_convert_text_prompt_missing_template_raises_error(
         self, integration: LangChainIntegration
     ) -> None:
         """Test error when TEXT prompt has no template."""
@@ -134,11 +131,10 @@ class TestLangChainIntegration:
 
         # Act & Assert
         with pytest.raises(ConversionError, match="TEXT format requires template"):
-            await integration.convert(prompt, {})
+            integration.convert(prompt, {})
 
     # Test: Chat prompt conversion
-    @pytest.mark.asyncio
-    async def test_convert_chat_prompt_to_chat_prompt_template(
+    def test_convert_chat_prompt_to_chat_prompt_template(
         self, integration: LangChainIntegration, chat_prompt: Prompt
     ) -> None:
         """Test converting CHAT prompt to LangChain ChatPromptTemplate."""
@@ -147,15 +143,14 @@ class TestLangChainIntegration:
         variables = {"topic": "AI"}
 
         # Act
-        result = await integration.convert(chat_prompt, variables)
+        result = integration.convert(chat_prompt, variables)
 
         # Assert
         assert isinstance(result, ChatPromptTemplate)
         # Verify we have 2 message templates
         assert len(result.messages) == 2
 
-    @pytest.mark.asyncio
-    async def test_convert_chat_prompt_with_all_roles(
+    def test_convert_chat_prompt_with_all_roles(
         self, integration: LangChainIntegration
     ) -> None:
         """Test CHAT prompt with multiple roles."""
@@ -176,14 +171,13 @@ class TestLangChainIntegration:
         )
 
         # Act
-        result = await integration.convert(prompt, {})
+        result = integration.convert(prompt, {})
 
         # Assert
         assert isinstance(result, LCChatPromptTemplate)
         assert len(result.messages) == 3
 
-    @pytest.mark.asyncio
-    async def test_convert_chat_prompt_missing_template_raises_error(
+    def test_convert_chat_prompt_missing_template_raises_error(
         self, integration: LangChainIntegration
     ) -> None:
         """Test error when CHAT prompt has no chat_template."""
@@ -201,7 +195,7 @@ class TestLangChainIntegration:
 
         # Act & Assert
         with pytest.raises(ConversionError, match="CHAT format requires chat_template"):
-            await integration.convert(prompt, {})
+            integration.convert(prompt, {})
 
     # Test: Handlebars to f-string conversion
     def test_handlebars_to_fstring_simple(
@@ -278,8 +272,7 @@ class TestLangChainIntegration:
         assert integration.validate_compatibility(instruction_prompt) is False
 
     # Test: Error handling
-    @pytest.mark.asyncio
-    async def test_convert_handles_creation_error(
+    def test_convert_handles_creation_error(
         self, template_engine: TemplateEngine
     ) -> None:
         """Test error handling when template creation fails."""
@@ -308,13 +301,12 @@ class TestLangChainIntegration:
         try:
             # Act & Assert
             with pytest.raises(ConversionError, match="Failed to create PromptTemplate"):
-                await integration.convert(prompt, {})
+                integration.convert(prompt, {})
         finally:
             # Restore original method
             LCPromptTemplate.from_template = staticmethod(original_from_template)
 
-    @pytest.mark.asyncio
-    async def test_conversion_error_includes_prompt_id(
+    def test_conversion_error_includes_prompt_id(
         self, integration: LangChainIntegration
     ) -> None:
         """Test that ConversionError includes prompt_id in context."""
@@ -330,12 +322,11 @@ class TestLangChainIntegration:
 
         # Act & Assert
         with pytest.raises(ConversionError) as exc_info:
-            await integration.convert(prompt, {})
+            integration.convert(prompt, {})
 
         assert exc_info.value.context.get("prompt_id") == "my_langchain_prompt"
 
-    @pytest.mark.asyncio
-    async def test_conversion_error_includes_framework(
+    def test_conversion_error_includes_framework(
         self, integration: LangChainIntegration
     ) -> None:
         """Test that ConversionError includes framework in context."""
@@ -351,7 +342,7 @@ class TestLangChainIntegration:
 
         # Act & Assert
         with pytest.raises(ConversionError) as exc_info:
-            await integration.convert(prompt, {})
+            integration.convert(prompt, {})
 
         assert exc_info.value.context.get("framework") == "langchain"
 

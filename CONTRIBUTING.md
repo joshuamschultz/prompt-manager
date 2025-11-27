@@ -183,6 +183,7 @@ def convert(
 - **Fixtures**: Use pytest fixtures for common setup
 - **Markers**: Use `@pytest.mark.unit` or `@pytest.mark.integration`
 - **Async Tests**: Use `@pytest.mark.asyncio` for async functions
+- **Dual Interface**: Test both sync and async modes
 
 Example test structure:
 
@@ -210,6 +211,283 @@ async def test_render_text_prompt(manager):
     assert "Alice" in result
     assert isinstance(result, str)
 ```
+
+## Testing Dual Sync/Async Interface
+
+The dual interface allows methods to work with or without `await`. When contributing code that uses the dual interface, follow these testing guidelines.
+
+### Test Pattern: Both Sync and Async
+
+All dual interface methods should be tested in both sync and async modes:
+
+```python
+import pytest
+import asyncio
+from prompt_manager import PromptManager
+
+def test_sync_render():
+    """Test synchronous rendering."""
+    manager = PromptManager.create()
+    manager.create_prompt({...})
+
+    # Sync call - no await
+    result = manager.render("test", {"name": "Alice"})
+
+    assert "Alice" in result
+    assert isinstance(result, str)
+
+
+@pytest.mark.asyncio
+async def test_async_render():
+    """Test asynchronous rendering."""
+    manager = await PromptManager.create()
+    await manager.create_prompt({...})
+
+    # Async call - with await
+    result = await manager.render("test", {"name": "Alice"})
+
+    assert "Alice" in result
+    assert isinstance(result, str)
+
+
+def test_sync_async_equivalence():
+    """Test that sync and async produce identical results."""
+    # Sync execution
+    manager_sync = PromptManager.create()
+    manager_sync.create_prompt({...})
+    result_sync = manager_sync.render("test", {"name": "Alice"})
+
+    # Async execution
+    async def async_flow():
+        manager = await PromptManager.create()
+        await manager.create_prompt({...})
+        return await manager.render("test", {"name": "Alice"})
+
+    result_async = asyncio.run(async_flow())
+
+    # Should be identical
+    assert result_sync == result_async
+```
+
+### Fixture Pattern
+
+Create separate fixtures for sync and async managers:
+
+```python
+import pytest
+from prompt_manager import PromptManager
+
+@pytest.fixture
+def sync_manager():
+    """Create synchronous manager."""
+    return PromptManager.create()
+
+
+@pytest.fixture
+async def async_manager():
+    """Create asynchronous manager."""
+    return await PromptManager.create()
+
+
+# Use in tests
+def test_with_sync_manager(sync_manager):
+    """Test using sync manager."""
+    result = sync_manager.render("test", {})
+    assert result is not None
+
+
+@pytest.mark.asyncio
+async def test_with_async_manager(async_manager):
+    """Test using async manager."""
+    result = await async_manager.render("test", {})
+    assert result is not None
+```
+
+### Testing Error Handling
+
+Verify that errors are raised identically in both modes:
+
+```python
+import pytest
+from prompt_manager import PromptManager
+from prompt_manager.exceptions import PromptNotFoundError
+
+def test_sync_error_handling():
+    """Test sync mode error handling."""
+    manager = PromptManager.create()
+
+    with pytest.raises(PromptNotFoundError):
+        manager.render("nonexistent", {})
+
+
+@pytest.mark.asyncio
+async def test_async_error_handling():
+    """Test async mode error handling."""
+    manager = await PromptManager.create()
+
+    with pytest.raises(PromptNotFoundError):
+        await manager.render("nonexistent", {})
+```
+
+### Testing Concurrent Operations
+
+For async mode, test concurrent execution:
+
+```python
+import pytest
+import asyncio
+from prompt_manager import PromptManager
+
+@pytest.mark.asyncio
+async def test_concurrent_rendering():
+    """Test concurrent prompt rendering."""
+    manager = await PromptManager.create()
+    await manager.create_prompt({...})
+
+    # Render 10 prompts concurrently
+    tasks = [
+        manager.render("test", {"name": f"User{i}"})
+        for i in range(10)
+    ]
+    results = await asyncio.gather(*tasks)
+
+    assert len(results) == 10
+    assert all("User" in r for r in results)
+```
+
+### Type Checking in Tests
+
+The dual interface returns `Union[T, Awaitable[T]]`. In tests, type checkers may show warnings. This is expected:
+
+```python
+# Type checker may warn, but this is correct
+result = manager.render("test", {})  # Returns str in sync context
+
+# Type checker understands this
+result = await manager.render("test", {})  # Returns str in async context
+
+# Optional: Use type assertions if needed
+from typing import cast
+result = cast(str, manager.render("test", {}))
+```
+
+### What to Test
+
+When adding dual interface support to a new method:
+
+1. **Sync execution**: Test method works without `await`
+2. **Async execution**: Test method works with `await`
+3. **Equivalence**: Verify both modes produce identical results
+4. **Error handling**: Test errors raised identically in both modes
+5. **Edge cases**: Test with empty inputs, missing data, etc.
+6. **Performance**: Verify no significant performance regression
+
+### Example: Complete Test Suite
+
+```python
+import pytest
+import asyncio
+from prompt_manager import PromptManager
+from prompt_manager.exceptions import PromptNotFoundError
+
+class TestDualInterfaceRender:
+    """Test dual interface for render method."""
+
+    def test_sync_render_success(self):
+        """Test successful sync rendering."""
+        manager = PromptManager.create()
+        manager.create_prompt({
+            "id": "test",
+            "version": "1.0.0",
+            "template": {"content": "Hello {{name}}!"}
+        })
+
+        result = manager.render("test", {"name": "Alice"})
+        assert result == "Hello Alice!"
+
+    @pytest.mark.asyncio
+    async def test_async_render_success(self):
+        """Test successful async rendering."""
+        manager = await PromptManager.create()
+        await manager.create_prompt({
+            "id": "test",
+            "version": "1.0.0",
+            "template": {"content": "Hello {{name}}!"}
+        })
+
+        result = await manager.render("test", {"name": "Alice"})
+        assert result == "Hello Alice!"
+
+    def test_sync_render_not_found(self):
+        """Test sync rendering with non-existent prompt."""
+        manager = PromptManager.create()
+
+        with pytest.raises(PromptNotFoundError):
+            manager.render("nonexistent", {})
+
+    @pytest.mark.asyncio
+    async def test_async_render_not_found(self):
+        """Test async rendering with non-existent prompt."""
+        manager = await PromptManager.create()
+
+        with pytest.raises(PromptNotFoundError):
+            await manager.render("nonexistent", {})
+
+    def test_sync_async_equivalence(self):
+        """Test that sync and async produce identical results."""
+        # Sync
+        manager_sync = PromptManager.create()
+        manager_sync.create_prompt({
+            "id": "test",
+            "version": "1.0.0",
+            "template": {"content": "Hello {{name}}!"}
+        })
+        result_sync = manager_sync.render("test", {"name": "Alice"})
+
+        # Async
+        async def async_flow():
+            manager = await PromptManager.create()
+            await manager.create_prompt({
+                "id": "test",
+                "version": "1.0.0",
+                "template": {"content": "Hello {{name}}!"}
+            })
+            return await manager.render("test", {"name": "Alice"})
+
+        result_async = asyncio.run(async_flow())
+
+        # Verify equivalence
+        assert result_sync == result_async
+
+    @pytest.mark.asyncio
+    async def test_concurrent_rendering(self):
+        """Test concurrent async rendering."""
+        manager = await PromptManager.create()
+        await manager.create_prompt({
+            "id": "test",
+            "version": "1.0.0",
+            "template": {"content": "Hello {{name}}!"}
+        })
+
+        # Render 10 times concurrently
+        tasks = [
+            manager.render("test", {"name": f"User{i}"})
+            for i in range(10)
+        ]
+        results = await asyncio.gather(*tasks)
+
+        assert len(results) == 10
+        assert all(f"User{i}" in results[i] for i in range(10))
+```
+
+### Reference Documentation
+
+For more details on the dual interface implementation and patterns:
+
+- [TYPE_CHECKING.md](TYPE_CHECKING.md) - Type checking patterns and configuration
+- [MIGRATION.md](MIGRATION.md) - Migration guide from async-only to dual interface
+- [docs/BEST_PRACTICES.md](docs/BEST_PRACTICES.md) - When to use sync vs async
+- [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) - Common issues and solutions
 
 ### Code Style
 
@@ -392,4 +670,4 @@ Thank you for contributing to Prompt Manager!
 
 ---
 
-**Last Updated**: 2025-01-19
+**Last Updated**: 2025-01-25

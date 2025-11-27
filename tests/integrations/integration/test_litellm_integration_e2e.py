@@ -25,7 +25,7 @@ def litellm_integration(template_engine):
 
 class TestLiteLLME2E:
     @pytest.mark.integration
-    async def test_text_prompt(self, litellm_integration):
+    def test_text_prompt(self, litellm_integration):
         """Test text prompt conversion (delegates to OpenAI format)."""
         prompt = Prompt(
             id="test",
@@ -33,13 +33,13 @@ class TestLiteLLME2E:
             template=PromptTemplate(content="Hello {{name}}!"),
         )
 
-        result = await litellm_integration.convert(prompt, {"name": "World"})
+        result = litellm_integration.convert(prompt, {"name": "World"})
 
         assert isinstance(result, str)
         assert "Hello World!" in result
 
     @pytest.mark.integration
-    async def test_chat_prompt(self, litellm_integration):
+    def test_chat_prompt(self, litellm_integration):
         """Test chat prompt conversion (delegates to OpenAI format)."""
         prompt = Prompt(
             id="test",
@@ -51,7 +51,7 @@ class TestLiteLLME2E:
             ),
         )
 
-        result = await litellm_integration.convert(prompt, {"message": "Hi!"})
+        result = litellm_integration.convert(prompt, {"message": "Hi!"})
 
         assert isinstance(result, list)
         assert len(result) == 1

@@ -1,13 +1,12 @@
 """
 Schema loader for loading YAML schemas and converting to Pydantic validators.
 
-Provides async loading and caching of schema definitions.
+Provides loading and caching of schema definitions.
 """
 
 from pathlib import Path
 from typing import Any, Type
 
-import aiofiles
 import structlog
 import yaml
 from pydantic import BaseModel, ConfigDict, create_model
@@ -39,9 +38,12 @@ class SchemaLoader:
         self._schema_cache: dict[str, Schema] = {}
         self._model_cache: dict[str, Type[BaseModel]] = {}
 
-    async def load_file(self, filepath: Path) -> SchemaRegistry:
+    def load_file(self, filepath: Path) -> SchemaRegistry:
         """
         Load schemas from a YAML file.
+
+        Usage:
+            registry = loader.load_file(Path("schemas.yaml"))
 
         Args:
             filepath: Path to YAML file
@@ -56,8 +58,8 @@ class SchemaLoader:
         self._logger.info("loading_schema_file", file=str(filepath))
 
         try:
-            async with aiofiles.open(filepath, "r") as f:
-                content = await f.read()
+            with open(filepath, "r") as f:
+                content = f.read()
 
             # Parse YAML
             data = yaml.safe_load(content)
@@ -91,9 +93,12 @@ class SchemaLoader:
             msg = f"Failed to validate schema: {e}"
             raise SchemaValidationError(msg, file=str(filepath)) from e
 
-    async def load_directory(self, dirpath: Path) -> list[SchemaRegistry]:
+    def load_directory(self, dirpath: Path) -> list[SchemaRegistry]:
         """
         Load all YAML schema files from a directory.
+
+        Usage:
+            registries = loader.load_directory(Path("schemas/"))
 
         Args:
             dirpath: Directory path
@@ -111,7 +116,7 @@ class SchemaLoader:
 
         for filepath in yaml_files:
             try:
-                registry = await self.load_file(filepath)
+                registry = self.load_file(filepath)
                 registries.append(registry)
             except Exception as e:
                 self._logger.error(
@@ -317,13 +322,16 @@ class SchemaLoader:
 
         return Field(**field_kwargs)
 
-    async def validate_data(
+    def validate_data(
         self,
         schema_name: str,
         data: dict[str, Any],
     ) -> dict[str, Any]:
         """
         Validate data against a schema.
+
+        Usage:
+            validated = loader.validate_data("user_profile", data)
 
         Args:
             schema_name: Name of schema to validate against

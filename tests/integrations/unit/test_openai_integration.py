@@ -62,8 +62,7 @@ class TestOpenAIIntegration:
         )
 
     # Test: Text prompt conversion
-    @pytest.mark.asyncio
-    async def test_convert_text_prompt_to_string(
+    def test_convert_text_prompt_to_string(
         self, integration: OpenAIIntegration, text_prompt: Prompt
     ) -> None:
         """Test converting TEXT prompt to string."""
@@ -71,14 +70,13 @@ class TestOpenAIIntegration:
         variables = {"name": "Alice"}
 
         # Act
-        result = await integration.convert(text_prompt, variables)
+        result = integration.convert(text_prompt, variables)
 
         # Assert
         assert isinstance(result, str)
         assert result == "Hello Alice!"
 
-    @pytest.mark.asyncio
-    async def test_convert_text_prompt_with_multiple_variables(
+    def test_convert_text_prompt_with_multiple_variables(
         self, integration: OpenAIIntegration
     ) -> None:
         """Test TEXT prompt conversion with multiple variables."""
@@ -96,13 +94,12 @@ class TestOpenAIIntegration:
         variables = {"name": "Bob", "age": "25"}
 
         # Act
-        result = await integration.convert(prompt, variables)
+        result = integration.convert(prompt, variables)
 
         # Assert
         assert result == "Hello Bob, you are 25 years old."
 
-    @pytest.mark.asyncio
-    async def test_convert_text_prompt_missing_template_raises_error(
+    def test_convert_text_prompt_missing_template_raises_error(
         self, integration: OpenAIIntegration
     ) -> None:
         """Test error when TEXT prompt has no template (via mock)."""
@@ -120,11 +117,10 @@ class TestOpenAIIntegration:
 
         # Act & Assert
         with pytest.raises(ConversionError, match="TEXT format requires template"):
-            await integration.convert(prompt, {})
+            integration.convert(prompt, {})
 
     # Test: Chat prompt conversion
-    @pytest.mark.asyncio
-    async def test_convert_chat_prompt_to_message_list(
+    def test_convert_chat_prompt_to_message_list(
         self, integration: OpenAIIntegration, chat_prompt: Prompt
     ) -> None:
         """Test converting CHAT prompt to OpenAI message list."""
@@ -132,7 +128,7 @@ class TestOpenAIIntegration:
         variables = {"topic": "AI"}
 
         # Act
-        result = await integration.convert(chat_prompt, variables)
+        result = integration.convert(chat_prompt, variables)
 
         # Assert
         assert isinstance(result, list)
@@ -142,8 +138,7 @@ class TestOpenAIIntegration:
         assert result[1]["role"] == "user"
         assert result[1]["content"] == "Tell me about AI."
 
-    @pytest.mark.asyncio
-    async def test_convert_chat_prompt_with_all_roles(
+    def test_convert_chat_prompt_with_all_roles(
         self, integration: OpenAIIntegration
     ) -> None:
         """Test CHAT prompt with all supported roles."""
@@ -165,7 +160,7 @@ class TestOpenAIIntegration:
         )
 
         # Act
-        result = await integration.convert(prompt, {})
+        result = integration.convert(prompt, {})
 
         # Assert
         assert len(result) == 5
@@ -175,8 +170,7 @@ class TestOpenAIIntegration:
         assert result[3]["role"] == "function"
         assert result[4]["role"] == "tool"
 
-    @pytest.mark.asyncio
-    async def test_convert_chat_prompt_missing_template_raises_error(
+    def test_convert_chat_prompt_missing_template_raises_error(
         self, integration: OpenAIIntegration
     ) -> None:
         """Test error when CHAT prompt has no chat_template (via mock)."""
@@ -196,10 +190,9 @@ class TestOpenAIIntegration:
 
         # Act & Assert
         with pytest.raises(ConversionError, match="CHAT format requires chat_template"):
-            await integration.convert(prompt, {})
+            integration.convert(prompt, {})
 
-    @pytest.mark.asyncio
-    async def test_convert_chat_prompt_with_name_field(
+    def test_convert_chat_prompt_with_name_field(
         self, integration: OpenAIIntegration
     ) -> None:
         """Test CHAT prompt message with name field."""
@@ -221,7 +214,7 @@ class TestOpenAIIntegration:
         )
 
         # Act
-        result = await integration.convert(prompt, {})
+        result = integration.convert(prompt, {})
 
         # Assert
         assert len(result) == 1
@@ -229,8 +222,7 @@ class TestOpenAIIntegration:
         assert result[0]["content"] == "Hello"
         assert result[0]["name"] == "john_doe"
 
-    @pytest.mark.asyncio
-    async def test_convert_chat_prompt_without_name_field(
+    def test_convert_chat_prompt_without_name_field(
         self, integration: OpenAIIntegration
     ) -> None:
         """Test CHAT prompt message without name field."""
@@ -248,7 +240,7 @@ class TestOpenAIIntegration:
         )
 
         # Act
-        result = await integration.convert(prompt, {})
+        result = integration.convert(prompt, {})
 
         # Assert
         assert len(result) == 1
@@ -357,8 +349,7 @@ class TestOpenAIIntegration:
         assert integration.validate_compatibility(instruction_prompt) is True
 
     # Test: Error handling
-    @pytest.mark.asyncio
-    async def test_convert_unsupported_format_raises_error(
+    def test_convert_unsupported_format_raises_error(
         self, integration: OpenAIIntegration
     ) -> None:
         """Test error when converting unsupported format."""
@@ -373,10 +364,9 @@ class TestOpenAIIntegration:
 
         # Act & Assert
         with pytest.raises(ConversionError, match="Unsupported prompt format"):
-            await integration.convert(prompt, {})
+            integration.convert(prompt, {})
 
-    @pytest.mark.asyncio
-    async def test_convert_handles_template_rendering_error(
+    def test_convert_handles_template_rendering_error(
         self, template_engine: TemplateEngine
     ) -> None:
         """Test error handling when template rendering fails."""
@@ -396,10 +386,9 @@ class TestOpenAIIntegration:
 
         # Act & Assert
         with pytest.raises(ConversionError, match="Failed to render text template"):
-            await integration.convert(prompt, {})
+            integration.convert(prompt, {})
 
-    @pytest.mark.asyncio
-    async def test_convert_chat_handles_rendering_error(
+    def test_convert_chat_handles_rendering_error(
         self, template_engine: TemplateEngine
     ) -> None:
         """Test error handling when chat template rendering fails."""
@@ -421,11 +410,10 @@ class TestOpenAIIntegration:
 
         # Act & Assert
         with pytest.raises(ConversionError, match="Failed to render chat template"):
-            await integration.convert(prompt, {})
+            integration.convert(prompt, {})
 
     # Test: Variable substitution
-    @pytest.mark.asyncio
-    async def test_variable_substitution_in_text_prompt(
+    def test_variable_substitution_in_text_prompt(
         self, integration: OpenAIIntegration
     ) -> None:
         """Test variable substitution works correctly in TEXT prompts."""
@@ -443,13 +431,12 @@ class TestOpenAIIntegration:
         variables = {"name": "Alice", "age": "30", "city": "NYC"}
 
         # Act
-        result = await integration.convert(prompt, variables)
+        result = integration.convert(prompt, variables)
 
         # Assert
         assert result == "Name: Alice, Age: 30, City: NYC"
 
-    @pytest.mark.asyncio
-    async def test_variable_substitution_in_chat_prompt(
+    def test_variable_substitution_in_chat_prompt(
         self, integration: OpenAIIntegration
     ) -> None:
         """Test variable substitution works correctly in CHAT prompts."""
@@ -476,7 +463,7 @@ class TestOpenAIIntegration:
         variables = {"role": "helpful", "user_name": "Bob", "task": "coding"}
 
         # Act
-        result = await integration.convert(prompt, variables)
+        result = integration.convert(prompt, variables)
 
         # Assert
         assert len(result) == 2
@@ -505,8 +492,7 @@ class TestOpenAIIntegration:
         assert integration.strict_validation is False
 
     # Test: ConversionError context preservation
-    @pytest.mark.asyncio
-    async def test_conversion_error_includes_prompt_id(
+    def test_conversion_error_includes_prompt_id(
         self, integration: OpenAIIntegration
     ) -> None:
         """Test that ConversionError includes prompt_id in context."""
@@ -523,12 +509,11 @@ class TestOpenAIIntegration:
 
         # Act & Assert
         with pytest.raises(ConversionError) as exc_info:
-            await integration.convert(prompt, {})
+            integration.convert(prompt, {})
 
         assert exc_info.value.context.get("prompt_id") == "my_test_prompt"
 
-    @pytest.mark.asyncio
-    async def test_conversion_error_includes_framework(
+    def test_conversion_error_includes_framework(
         self, integration: OpenAIIntegration
     ) -> None:
         """Test that ConversionError includes framework in context."""
@@ -545,6 +530,6 @@ class TestOpenAIIntegration:
 
         # Act & Assert
         with pytest.raises(ConversionError) as exc_info:
-            await integration.convert(prompt, {})
+            integration.convert(prompt, {})
 
         assert exc_info.value.context.get("framework") == "openai"

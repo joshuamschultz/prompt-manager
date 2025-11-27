@@ -1,48 +1,41 @@
-# Text Summarization Output Schema
-# Validates output from text summarization prompt
-
-version: "1.0.0"
-
+version: 1.0.0
 metadata:
-  description: "Output validation for text summarization"
-  author: "Content Team"
-  created: "2024-11-19"
-
+  description: Output validation for text summarization
+  author: Content Team
+  created: '2024-11-19'
 schemas:
-  - name: "text_summarization_output"
-    version: "1.0.0"
-    description: "Output validation for text summarization prompt"
-    strict: true
-
-    fields:
-      - name: "summary"
-        type: "string"
-        required: true
-        description: "Generated summary"
-        validators:
-          - type: "min_length"
-            min_value: 10
-            error_message: "Summary must be at least 10 characters"
-          - type: "max_length"
-            max_value: 2000
-            error_message: "Summary must be less than 2000 characters"
-
-      - name: "key_points"
-        type: "list"
-        item_type: "string"
-        required: false
-        default: []
-        description: "Key points extracted from text"
-        validators:
-          - type: "max_length"
-            max_value: 10
-            error_message: "Maximum 10 key points"
-
-      - name: "word_count"
-        type: "integer"
-        required: false
-        description: "Word count of summary"
-        validators:
-          - type: "range"
-            min_value: 1
-            max_value: 1000
+- name: text_summarization_output
+  version: 1.0.0
+  description: Output validation for text summarization prompt
+  strict: true
+  fields:
+  - name: summary
+    type: string
+    required: true
+    description: Generated summary
+    validators:
+    - type: min_length
+      min_value: 10
+      error_message: Summary must be at least 10 characters
+    - type: max_length
+      max_value: 2000
+      error_message: Summary must be less than 2000 characters
+  - name: key_points
+    type: list
+    item_type: string
+    required: false
+    default: []
+    description: Key points extracted from text
+    validators:
+    - type: max_length
+      max_value: 10
+      error_message: Maximum 10 key points
+  - name: word_count
+    type: integer
+    required: false
+    nullable: true
+    description: Word count of summary
+    validators:
+    - type: range
+      min_value: 1
+      max_value: 1000

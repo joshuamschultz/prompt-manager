@@ -1,0 +1,56 @@
+id: marketing_email
+version: 1.0.1
+uid: 81a84d9b-b158-48f5-bb0c-9c29178f4365
+format: text
+template:
+  content: 'Hi {{name}},
+
+
+    Discover our amazing new {{product}}!
+
+
+    Use code {{discount_code}} for {{discount}}% off.
+
+
+    Don''t miss out on this exclusive offer!
+
+
+    Best regards,
+
+    The {{company}} Team
+
+    '
+  variables:
+  - name
+  - product
+  - discount_code
+  - discount
+  - company
+  partials: {}
+  helpers: {}
+chat_template: null
+status: active
+created_at: '2025-11-26T21:57:20.133666'
+updated_at: '2025-11-26T21:57:20.133668'
+metadata:
+  author: Marketing Team
+  description: Marketing email with product promotion
+  tags:
+  - marketing
+  - email
+  - promotion
+  category: marketing
+  use_cases: []
+  model_recommendations: []
+  temperature: null
+  max_tokens: null
+  custom: {}
+  changelog:
+  - version: 1.0.1
+    changes: Added product details and discount
+    date: '2024-11-19'
+  - version: 1.0.0
+    changes: Initial version
+    date: '2024-11-19'
+input_schema: null
+output_schema: null

@@ -34,7 +34,7 @@ class BaseIntegration(ABC, Generic[T]):
 
     Example:
         >>> class OpenAIIntegration(BaseIntegration[list[dict[str, Any]]]):
-        ...     async def convert(self, prompt, variables):
+        ...     def convert(self, prompt, variables):
         ...         # Convert to OpenAI message format
         ...         return [{"role": "user", "content": rendered}]
         ...
@@ -42,7 +42,6 @@ class BaseIntegration(ABC, Generic[T]):
         ...         return True  # OpenAI supports all formats
 
     Notes:
-        - Implementations must be async-safe
         - Conversion should be idempotent (same inputs = same outputs)
         - Validation should be fast (it may be called frequently)
     """
@@ -75,7 +74,7 @@ class BaseIntegration(ABC, Generic[T]):
         self._strict_validation = strict_validation
 
     @abstractmethod
-    async def convert(
+    def convert(
         self,
         prompt: Prompt,
         variables: Mapping[str, Any],
@@ -111,7 +110,7 @@ class BaseIntegration(ABC, Generic[T]):
             ...     format=PromptFormat.TEXT,
             ...     template=PromptTemplate(content="Hello {{name}}!")
             ... )
-            >>> result = await integration.convert(
+            >>> result = integration.convert(
             ...     prompt,
             ...     {"name": "Alice"}
             ... )

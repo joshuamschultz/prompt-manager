@@ -1,5 +1,7 @@
 """In-memory storage backend for testing and development."""
 
+from __future__ import annotations
+
 from collections import defaultdict
 
 import structlog
@@ -22,7 +24,7 @@ class InMemoryStorage:
         self._storage: dict[str, dict[str, Prompt]] = defaultdict(dict)
         self._logger = logger.bind(component="memory_storage")
 
-    async def save(self, prompt: Prompt) -> None:
+    def save(self, prompt: Prompt) -> None:
         """
         Save a prompt to memory.
 
@@ -37,7 +39,7 @@ class InMemoryStorage:
 
         self._storage[prompt.id][prompt.version] = prompt
 
-    async def load(self, prompt_id: str, version: str | None = None) -> Prompt:
+    def load(self, prompt_id: str, version: str | None = None) -> Prompt:
         """
         Load a prompt from memory.
 
@@ -67,7 +69,7 @@ class InMemoryStorage:
         latest_version = max(versions.keys(), key=self._version_key)
         return versions[latest_version]
 
-    async def delete(self, prompt_id: str, version: str | None = None) -> None:
+    def delete(self, prompt_id: str, version: str | None = None) -> None:
         """
         Delete a prompt from memory.
 
@@ -88,7 +90,7 @@ class InMemoryStorage:
         else:
             del self._storage[prompt_id]
 
-    async def list(
+    def list(
         self,
         *,
         tags: list[str] | None = None,
@@ -127,7 +129,7 @@ class InMemoryStorage:
 
         return prompts
 
-    async def exists(self, prompt_id: str, version: str | None = None) -> bool:
+    def exists(self, prompt_id: str, version: str | None = None) -> bool:
         """
         Check if a prompt exists.
 
@@ -145,6 +147,11 @@ class InMemoryStorage:
             return version in self._storage[prompt_id]
 
         return bool(self._storage[prompt_id])
+
+    def clear(self) -> None:
+        """Clear all prompts from storage."""
+        self._logger.warning("clearing_storage")
+        self._storage.clear()
 
     @staticmethod
     def _version_key(version: str) -> tuple[int, int, int]:

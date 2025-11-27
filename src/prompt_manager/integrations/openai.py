@@ -29,19 +29,19 @@ class OpenAIIntegration(BaseIntegration[list[OpenAIMessage] | str]):
         >>>
         >>> # TEXT format
         >>> prompt = Prompt(id="simple", format=PromptFormat.TEXT, ...)
-        >>> result = await integration.convert(prompt, {"name": "Alice"})
+        >>> result = integration.convert(prompt, {"name": "Alice"})
         >>> # result: "Hello Alice!"
         >>>
         >>> # CHAT format
         >>> chat_prompt = Prompt(id="chat", format=PromptFormat.CHAT, ...)
-        >>> messages = await integration.convert(chat_prompt, {})
+        >>> messages = integration.convert(chat_prompt, {})
         >>> # messages: [{"role": "system", "content": "..."}, ...]
 
     Reference:
         https://platform.openai.com/docs/api-reference/chat/create
     """
 
-    async def convert(
+    def convert(
         self,
         prompt: Prompt,
         variables: Mapping[str, Any],
@@ -61,12 +61,12 @@ class OpenAIIntegration(BaseIntegration[list[OpenAIMessage] | str]):
             IntegrationError: If prompt format is not supported
 
         Example:
-            >>> result = await integration.convert(prompt, {"user": "Alice"})
+            >>> result = integration.convert(prompt, {"user": "Alice"})
         """
         if prompt.format == PromptFormat.CHAT:
-            return await self._convert_chat(prompt, variables)
+            return self._convert_chat(prompt, variables)
         elif prompt.format == PromptFormat.TEXT:
-            return await self._convert_text(prompt, variables)
+            return self._convert_text(prompt, variables)
         else:
             raise ConversionError(
                 f"Unsupported prompt format: {prompt.format}",
@@ -74,7 +74,7 @@ class OpenAIIntegration(BaseIntegration[list[OpenAIMessage] | str]):
                 framework="openai",
             )
 
-    async def _convert_chat(
+    def _convert_chat(
         self,
         prompt: Prompt,
         variables: Mapping[str, Any],
@@ -103,7 +103,7 @@ class OpenAIIntegration(BaseIntegration[list[OpenAIMessage] | str]):
         try:
             for message in prompt.chat_template.messages:
                 # Render message content
-                rendered_content = await self._template_engine.render(
+                rendered_content = self._template_engine.render(
                     message.content,
                     variables,
                 )
@@ -130,7 +130,7 @@ class OpenAIIntegration(BaseIntegration[list[OpenAIMessage] | str]):
 
         return messages
 
-    async def _convert_text(
+    def _convert_text(
         self,
         prompt: Prompt,
         variables: Mapping[str, Any],
@@ -155,7 +155,7 @@ class OpenAIIntegration(BaseIntegration[list[OpenAIMessage] | str]):
             )
 
         try:
-            rendered = await self._template_engine.render(
+            rendered = self._template_engine.render(
                 prompt.template.content,
                 variables,
             )

@@ -1,0 +1,32 @@
+id: simple_task
+version: 1.0.1
+uid: bb3857a7-4bff-4f61-9ece-fa32fc6c2d39
+format: text
+template:
+  content: 'You are a helpful AI assistant. The user needs help with: {{task}}
+
+
+    Provide a detailed, step-by-step response.'
+  variables:
+  - task
+  partials: {}
+  helpers: {}
+chat_template: null
+status: active
+created_at: '2025-11-26T21:57:20.372238'
+updated_at: '2025-11-26T21:57:20.373421'
+metadata:
+  author: notebook_example
+  description: An improved task completion prompt with better instructions
+  tags:
+  - task
+  - general
+  - detailed
+  category: null
+  use_cases: []
+  model_recommendations: []
+  temperature: null
+  max_tokens: null
+  custom: {}
+input_schema: null
+output_schema: null

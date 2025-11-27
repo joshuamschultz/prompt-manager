@@ -5,7 +5,7 @@ Provides a type-safe representation of YAML schema definitions.
 """
 
 from enum import Enum
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -160,8 +160,8 @@ class Schema(BaseModel):
     version: str = Field(default="1.0.0", pattern=r"^\d+\.\d+\.\d+$")
     description: str | None = None
 
-    # Schema fields
-    fields: list[SchemaField] = Field(..., min_items=1)
+    # Schema fields - use Annotated to apply min_length constraint
+    fields: Annotated[list[SchemaField], Field(min_length=1)]
 
     # Metadata
     strict: bool = Field(default=True)  # If True, reject extra fields

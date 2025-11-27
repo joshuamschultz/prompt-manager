@@ -90,8 +90,7 @@ class TestLiteLLMIntegration:
         assert integration._openai_integration.strict_validation is False
 
     # Test: Text prompt conversion (delegates to OpenAI)
-    @pytest.mark.asyncio
-    async def test_convert_text_prompt_to_string(
+    def test_convert_text_prompt_to_string(
         self, integration: LiteLLMIntegration, text_prompt: Prompt
     ) -> None:
         """Test converting TEXT prompt to string (via OpenAI delegation)."""
@@ -99,14 +98,13 @@ class TestLiteLLMIntegration:
         variables = {"name": "Alice"}
 
         # Act
-        result = await integration.convert(text_prompt, variables)
+        result = integration.convert(text_prompt, variables)
 
         # Assert
         assert isinstance(result, str)
         assert result == "Hello Alice!"
 
-    @pytest.mark.asyncio
-    async def test_convert_text_prompt_delegates_to_openai(
+    def test_convert_text_prompt_delegates_to_openai(
         self, integration: LiteLLMIntegration, text_prompt: Prompt
     ) -> None:
         """Test that convert delegates to OpenAI integration."""
@@ -118,15 +116,14 @@ class TestLiteLLMIntegration:
         variables = {"name": "Test"}
 
         # Act
-        result = await integration.convert(text_prompt, variables)
+        result = integration.convert(text_prompt, variables)
 
         # Assert
         mock_convert.assert_called_once_with(text_prompt, variables)
         assert result == mock_result
 
     # Test: Chat prompt conversion (delegates to OpenAI)
-    @pytest.mark.asyncio
-    async def test_convert_chat_prompt_to_message_list(
+    def test_convert_chat_prompt_to_message_list(
         self, integration: LiteLLMIntegration, chat_prompt: Prompt
     ) -> None:
         """Test converting CHAT prompt to OpenAI message list."""
@@ -134,7 +131,7 @@ class TestLiteLLMIntegration:
         variables = {"topic": "AI"}
 
         # Act
-        result = await integration.convert(chat_prompt, variables)
+        result = integration.convert(chat_prompt, variables)
 
         # Assert
         assert isinstance(result, list)
@@ -144,8 +141,7 @@ class TestLiteLLMIntegration:
         assert result[1]["role"] == "user"
         assert result[1]["content"] == "Tell me about AI."
 
-    @pytest.mark.asyncio
-    async def test_convert_chat_prompt_delegates_to_openai(
+    def test_convert_chat_prompt_delegates_to_openai(
         self, integration: LiteLLMIntegration, chat_prompt: Prompt
     ) -> None:
         """Test that chat conversion delegates to OpenAI integration."""
@@ -157,7 +153,7 @@ class TestLiteLLMIntegration:
         variables = {"topic": "Test"}
 
         # Act
-        result = await integration.convert(chat_prompt, variables)
+        result = integration.convert(chat_prompt, variables)
 
         # Assert
         mock_convert.assert_called_once_with(chat_prompt, variables)
@@ -261,8 +257,7 @@ class TestLiteLLMIntegration:
         assert integration.template_engine is template_engine
 
     # Test: Variable substitution
-    @pytest.mark.asyncio
-    async def test_variable_substitution_in_text_prompt(
+    def test_variable_substitution_in_text_prompt(
         self, integration: LiteLLMIntegration
     ) -> None:
         """Test variable substitution in TEXT prompts."""
@@ -280,13 +275,12 @@ class TestLiteLLMIntegration:
         variables = {"name": "Bob", "age": "30"}
 
         # Act
-        result = await integration.convert(prompt, variables)
+        result = integration.convert(prompt, variables)
 
         # Assert
         assert result == "Name: Bob, Age: 30"
 
-    @pytest.mark.asyncio
-    async def test_variable_substitution_in_chat_prompt(
+    def test_variable_substitution_in_chat_prompt(
         self, integration: LiteLLMIntegration
     ) -> None:
         """Test variable substitution in CHAT prompts."""
@@ -306,7 +300,7 @@ class TestLiteLLMIntegration:
         variables = {"name": "Charlie"}
 
         # Act
-        result = await integration.convert(prompt, variables)
+        result = integration.convert(prompt, variables)
 
         # Assert
         assert len(result) == 1

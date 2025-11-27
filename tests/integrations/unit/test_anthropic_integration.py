@@ -48,8 +48,7 @@ class TestAnthropicIntegration:
         )
 
     # Test: Format validation
-    @pytest.mark.asyncio
-    async def test_convert_text_format_raises_incompatible_format_error(
+    def test_convert_text_format_raises_incompatible_format_error(
         self, integration: AnthropicIntegration
     ) -> None:
         """Test that TEXT format raises IncompatibleFormatError."""
@@ -66,10 +65,9 @@ class TestAnthropicIntegration:
         with pytest.raises(
             IncompatibleFormatError, match="incompatible with framework 'anthropic'"
         ):
-            await integration.convert(text_prompt, {})
+            integration.convert(text_prompt, {})
 
-    @pytest.mark.asyncio
-    async def test_convert_chat_prompt_to_anthropic_format(
+    def test_convert_chat_prompt_to_anthropic_format(
         self, integration: AnthropicIntegration, chat_prompt: Prompt
     ) -> None:
         """Test converting CHAT prompt to Anthropic format."""
@@ -77,7 +75,7 @@ class TestAnthropicIntegration:
         variables = {"topic": "AI"}
 
         # Act
-        result = await integration.convert(chat_prompt, variables)
+        result = integration.convert(chat_prompt, variables)
 
         # Assert
         assert isinstance(result, dict)
@@ -88,8 +86,7 @@ class TestAnthropicIntegration:
         assert result["messages"][0]["role"] == "user"
         assert result["messages"][0]["content"] == "Tell me about AI."
 
-    @pytest.mark.asyncio
-    async def test_convert_chat_prompt_without_system_message(
+    def test_convert_chat_prompt_without_system_message(
         self, integration: AnthropicIntegration
     ) -> None:
         """Test CHAT prompt without system message."""
@@ -108,7 +105,7 @@ class TestAnthropicIntegration:
         )
 
         # Act
-        result = await integration.convert(prompt, {})
+        result = integration.convert(prompt, {})
 
         # Assert
         assert "messages" in result
@@ -117,8 +114,7 @@ class TestAnthropicIntegration:
         assert result["messages"][0]["role"] == "user"
         assert result["messages"][1]["role"] == "assistant"
 
-    @pytest.mark.asyncio
-    async def test_convert_chat_prompt_with_multiple_exchanges(
+    def test_convert_chat_prompt_with_multiple_exchanges(
         self, integration: AnthropicIntegration
     ) -> None:
         """Test CHAT prompt with multiple user-assistant exchanges."""
@@ -139,7 +135,7 @@ class TestAnthropicIntegration:
         )
 
         # Act
-        result = await integration.convert(prompt, {})
+        result = integration.convert(prompt, {})
 
         # Assert
         assert result["system"] == "System message"
@@ -148,8 +144,7 @@ class TestAnthropicIntegration:
         assert result["messages"][1]["role"] == "assistant"
         assert result["messages"][2]["role"] == "user"
 
-    @pytest.mark.asyncio
-    async def test_convert_missing_chat_template_raises_error(
+    def test_convert_missing_chat_template_raises_error(
         self, integration: AnthropicIntegration
     ) -> None:
         """Test error when CHAT prompt has no chat_template."""
@@ -167,7 +162,7 @@ class TestAnthropicIntegration:
 
         # Act & Assert
         with pytest.raises(ConversionError, match="CHAT format requires chat_template"):
-            await integration.convert(prompt, {})
+            integration.convert(prompt, {})
 
     # Test: Role mapping
     def test_map_role_user(self, integration: AnthropicIntegration) -> None:
@@ -211,8 +206,7 @@ class TestAnthropicIntegration:
             integration._map_role(Role.SYSTEM)
 
     # Test: Message alternation validation
-    @pytest.mark.asyncio
-    async def test_validate_alternation_valid_sequence(
+    def test_validate_alternation_valid_sequence(
         self, integration: AnthropicIntegration
     ) -> None:
         """Test valid user-assistant alternation."""
@@ -232,11 +226,10 @@ class TestAnthropicIntegration:
         )
 
         # Act & Assert - Should not raise
-        result = await integration.convert(prompt, {})
+        result = integration.convert(prompt, {})
         assert len(result["messages"]) == 3
 
-    @pytest.mark.asyncio
-    async def test_validate_alternation_first_message_not_user(
+    def test_validate_alternation_first_message_not_user(
         self, integration: AnthropicIntegration
     ) -> None:
         """Test error when first message is not from user."""
@@ -256,10 +249,9 @@ class TestAnthropicIntegration:
 
         # Act & Assert
         with pytest.raises(ConversionError, match="First message must be from user"):
-            await integration.convert(prompt, {})
+            integration.convert(prompt, {})
 
-    @pytest.mark.asyncio
-    async def test_validate_alternation_consecutive_user_messages(
+    def test_validate_alternation_consecutive_user_messages(
         self, integration: AnthropicIntegration
     ) -> None:
         """Test error when consecutive user messages appear."""
@@ -279,10 +271,9 @@ class TestAnthropicIntegration:
 
         # Act & Assert
         with pytest.raises(ConversionError, match="Messages must alternate"):
-            await integration.convert(prompt, {})
+            integration.convert(prompt, {})
 
-    @pytest.mark.asyncio
-    async def test_validate_alternation_consecutive_assistant_messages(
+    def test_validate_alternation_consecutive_assistant_messages(
         self, integration: AnthropicIntegration
     ) -> None:
         """Test error when consecutive assistant messages appear."""
@@ -303,10 +294,9 @@ class TestAnthropicIntegration:
 
         # Act & Assert
         with pytest.raises(ConversionError, match="Messages must alternate"):
-            await integration.convert(prompt, {})
+            integration.convert(prompt, {})
 
-    @pytest.mark.asyncio
-    async def test_validate_alternation_with_tool_roles(
+    def test_validate_alternation_with_tool_roles(
         self, integration: AnthropicIntegration
     ) -> None:
         """Test alternation with FUNCTION/TOOL roles mapped to user."""
@@ -326,7 +316,7 @@ class TestAnthropicIntegration:
         )
 
         # Act
-        result = await integration.convert(prompt, {})
+        result = integration.convert(prompt, {})
 
         # Assert
         assert len(result["messages"]) == 3
@@ -335,8 +325,7 @@ class TestAnthropicIntegration:
         assert result["messages"][2]["role"] == "user"  # FUNCTION mapped to user
 
     # Test: System message handling
-    @pytest.mark.asyncio
-    async def test_single_system_message_extracted(
+    def test_single_system_message_extracted(
         self, integration: AnthropicIntegration
     ) -> None:
         """Test single system message is extracted correctly."""
@@ -355,14 +344,13 @@ class TestAnthropicIntegration:
         )
 
         # Act
-        result = await integration.convert(prompt, {})
+        result = integration.convert(prompt, {})
 
         # Assert
         assert result["system"] == "Be helpful"
         assert len(result["messages"]) == 1
 
-    @pytest.mark.asyncio
-    async def test_multiple_system_messages_raises_error(
+    def test_multiple_system_messages_raises_error(
         self, integration: AnthropicIntegration
     ) -> None:
         """Test error when multiple system messages present."""
@@ -385,11 +373,10 @@ class TestAnthropicIntegration:
         with pytest.raises(
             ConversionError, match="only supports one system message"
         ):
-            await integration.convert(prompt, {})
+            integration.convert(prompt, {})
 
     # Test: Variable substitution
-    @pytest.mark.asyncio
-    async def test_variable_substitution_in_system_message(
+    def test_variable_substitution_in_system_message(
         self, integration: AnthropicIntegration
     ) -> None:
         """Test variable substitution in system message."""
@@ -410,13 +397,12 @@ class TestAnthropicIntegration:
         variables = {"role": "helpful"}
 
         # Act
-        result = await integration.convert(prompt, variables)
+        result = integration.convert(prompt, variables)
 
         # Assert
         assert result["system"] == "You are a helpful assistant."
 
-    @pytest.mark.asyncio
-    async def test_variable_substitution_in_messages(
+    def test_variable_substitution_in_messages(
         self, integration: AnthropicIntegration
     ) -> None:
         """Test variable substitution in user/assistant messages."""
@@ -437,15 +423,14 @@ class TestAnthropicIntegration:
         variables = {"name": "Alice"}
 
         # Act
-        result = await integration.convert(prompt, variables)
+        result = integration.convert(prompt, variables)
 
         # Assert
         assert result["messages"][0]["content"] == "My name is Alice."
         assert result["messages"][1]["content"] == "Hello Alice!"
 
     # Test: Error handling
-    @pytest.mark.asyncio
-    async def test_convert_handles_template_rendering_error(
+    def test_convert_handles_template_rendering_error(
         self, template_engine: TemplateEngine
     ) -> None:
         """Test error handling when template rendering fails."""
@@ -467,10 +452,9 @@ class TestAnthropicIntegration:
 
         # Act & Assert
         with pytest.raises(ConversionError, match="Failed to render chat template"):
-            await integration.convert(prompt, {})
+            integration.convert(prompt, {})
 
-    @pytest.mark.asyncio
-    async def test_conversion_error_includes_prompt_id(
+    def test_conversion_error_includes_prompt_id(
         self, integration: AnthropicIntegration
     ) -> None:
         """Test that ConversionError includes prompt_id in context."""
@@ -488,12 +472,11 @@ class TestAnthropicIntegration:
 
         # Act & Assert
         with pytest.raises(ConversionError) as exc_info:
-            await integration.convert(prompt, {})
+            integration.convert(prompt, {})
 
         assert exc_info.value.context.get("prompt_id") == "my_anthropic_prompt"
 
-    @pytest.mark.asyncio
-    async def test_conversion_error_includes_framework(
+    def test_conversion_error_includes_framework(
         self, integration: AnthropicIntegration
     ) -> None:
         """Test that ConversionError includes framework in context."""
@@ -511,7 +494,7 @@ class TestAnthropicIntegration:
 
         # Act & Assert
         with pytest.raises(ConversionError) as exc_info:
-            await integration.convert(prompt, {})
+            integration.convert(prompt, {})
 
         assert exc_info.value.context.get("framework") == "anthropic"
 

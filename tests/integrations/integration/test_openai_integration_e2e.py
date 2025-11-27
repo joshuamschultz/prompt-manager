@@ -31,7 +31,7 @@ class TestOpenAITextCompletionE2E:
     """Test OpenAI text completion end-to-end workflow."""
 
     @pytest.mark.integration
-    async def test_text_prompt_to_openai_completion(self, openai_integration):
+    def test_text_prompt_to_openai_completion(self, openai_integration):
         """Test converting text prompt to OpenAI completion format."""
         # Create prompt
         prompt = Prompt(
@@ -43,7 +43,7 @@ class TestOpenAITextCompletionE2E:
         )
 
         # Convert to OpenAI format
-        result = await openai_integration.convert(
+        result = openai_integration.convert(
             prompt,
             {"name": "Alice", "company": "Acme Corp"},
         )
@@ -54,7 +54,7 @@ class TestOpenAITextCompletionE2E:
         assert "Welcome to Acme Corp" in result
 
     @pytest.mark.integration
-    async def test_text_prompt_with_openai_sdk(self, openai_integration):
+    def test_text_prompt_with_openai_sdk(self, openai_integration):
         """Test text prompt works with OpenAI SDK (mocked)."""
         prompt = Prompt(
             id="question",
@@ -65,7 +65,7 @@ class TestOpenAITextCompletionE2E:
         )
 
         # Convert prompt
-        text = await openai_integration.convert(
+        text = openai_integration.convert(
             prompt,
             {"question": "What is Python?"},
         )
@@ -84,7 +84,7 @@ class TestOpenAITextCompletionE2E:
             import openai
 
             client = openai.AsyncOpenAI(api_key="test-key")
-            response = await client.completions.create(
+            response = client.completions.create(
                 model="gpt-3.5-turbo-instruct",
                 prompt=text,
             )
@@ -100,7 +100,7 @@ class TestOpenAIChatCompletionE2E:
     """Test OpenAI chat completion end-to-end workflow."""
 
     @pytest.mark.integration
-    async def test_chat_prompt_to_openai_messages(self, openai_integration):
+    def test_chat_prompt_to_openai_messages(self, openai_integration):
         """Test converting chat prompt to OpenAI messages format."""
         # Create chat prompt
         prompt = Prompt(
@@ -121,7 +121,7 @@ class TestOpenAIChatCompletionE2E:
         )
 
         # Convert to OpenAI format
-        messages = await openai_integration.convert(
+        messages = openai_integration.convert(
             prompt,
             {
                 "company": "Acme Corp",
@@ -142,7 +142,7 @@ class TestOpenAIChatCompletionE2E:
         assert "reset my password" in messages[1]["content"]
 
     @pytest.mark.integration
-    async def test_chat_prompt_with_openai_sdk(self, openai_integration):
+    def test_chat_prompt_with_openai_sdk(self, openai_integration):
         """Test chat prompt works with OpenAI SDK (mocked)."""
         prompt = Prompt(
             id="assistant",
@@ -162,7 +162,7 @@ class TestOpenAIChatCompletionE2E:
         )
 
         # Convert prompt
-        messages = await openai_integration.convert(
+        messages = openai_integration.convert(
             prompt,
             {"user_message": "Tell me a joke"},
         )
@@ -181,7 +181,7 @@ class TestOpenAIChatCompletionE2E:
             import openai
 
             client = openai.AsyncOpenAI(api_key="test-key")
-            response = await client.chat.completions.create(
+            response = client.chat.completions.create(
                 model="gpt-4",
                 messages=messages,
             )
@@ -197,7 +197,7 @@ class TestOpenAIFunctionCallingE2E:
     """Test OpenAI function calling end-to-end workflow."""
 
     @pytest.mark.integration
-    async def test_chat_with_function_call(self, openai_integration):
+    def test_chat_with_function_call(self, openai_integration):
         """Test chat prompt with function calling metadata."""
         prompt = Prompt(
             id="function_caller",
@@ -213,7 +213,7 @@ class TestOpenAIFunctionCallingE2E:
         )
 
         # Convert prompt
-        messages = await openai_integration.convert(
+        messages = openai_integration.convert(
             prompt,
             {"location": "San Francisco"},
         )
@@ -249,7 +249,7 @@ class TestOpenAIFunctionCallingE2E:
                 }
             ]
 
-            response = await client.chat.completions.create(
+            response = client.chat.completions.create(
                 model="gpt-4",
                 messages=messages,
                 functions=functions,
@@ -263,7 +263,7 @@ class TestOpenAIVariableSubstitutionE2E:
     """Test variable substitution in OpenAI integration."""
 
     @pytest.mark.integration
-    async def test_multiple_variables_in_chat(self, openai_integration):
+    def test_multiple_variables_in_chat(self, openai_integration):
         """Test multiple variable substitution in chat messages."""
         prompt = Prompt(
             id="personalized_chat",
@@ -283,7 +283,7 @@ class TestOpenAIVariableSubstitutionE2E:
         )
 
         # Convert with multiple variables
-        messages = await openai_integration.convert(
+        messages = openai_integration.convert(
             prompt,
             {
                 "assistant_name": "Alex",
@@ -302,7 +302,7 @@ class TestOpenAIVariableSubstitutionE2E:
         assert "How can you help me today?" in messages[1]["content"]
 
     @pytest.mark.integration
-    async def test_complex_template_all_variables(self, openai_integration):
+    def test_complex_template_all_variables(self, openai_integration):
         """Test complex template with all variables provided."""
         prompt = Prompt(
             id="complex_template",
@@ -313,7 +313,7 @@ class TestOpenAIVariableSubstitutionE2E:
         )
 
         # Convert with all variables
-        result = await openai_integration.convert(
+        result = openai_integration.convert(
             prompt,
             {
                 "company": "Acme Corp",
@@ -332,7 +332,7 @@ class TestOpenAIErrorHandlingE2E:
     """Test error handling in OpenAI integration end-to-end."""
 
     @pytest.mark.integration
-    async def test_missing_variable_raises_error(self, openai_integration):
+    def test_missing_variable_raises_error(self, openai_integration):
         """Test that missing required variable raises error."""
         from prompt_manager.exceptions import ConversionError
 
@@ -344,4 +344,4 @@ class TestOpenAIErrorHandlingE2E:
 
         # Should raise error for missing variable
         with pytest.raises(ConversionError):
-            await openai_integration.convert(prompt, {})
+            openai_integration.convert(prompt, {})

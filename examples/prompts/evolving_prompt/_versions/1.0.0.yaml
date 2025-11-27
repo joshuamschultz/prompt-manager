@@ -1,0 +1,26 @@
+id: evolving_prompt
+version: 1.0.0
+uid: 09f29629-d15a-4b5b-b5ee-87560f9c9489
+format: text
+template:
+  content: 'Basic version: {{input}}'
+  variables:
+  - input
+  partials: {}
+  helpers: {}
+chat_template: null
+status: active
+created_at: '2025-11-26T21:42:58.525297'
+updated_at: '2025-11-26T21:42:58.525305'
+metadata:
+  author: null
+  description: Version 1.0.0 - Basic
+  tags: []
+  category: null
+  use_cases: []
+  model_recommendations: []
+  temperature: null
+  max_tokens: null
+  custom: {}
+input_schema: null
+output_schema: null

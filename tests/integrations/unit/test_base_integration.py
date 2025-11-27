@@ -14,7 +14,7 @@ class ConcreteIntegration(BaseIntegration[str]):
         """Convert prompt to string format."""
         # Simple implementation for testing
         content = prompt.template.content if prompt.template else ""
-        rendered = await self._template_engine.render(content, variables)
+        rendered = self._template_engine.render(content, variables)
         return str(rendered)
 
     def validate_compatibility(self, prompt: Prompt) -> bool:
@@ -103,19 +103,17 @@ class TestConcreteIntegration:
             ),
         )
 
-    @pytest.mark.asyncio
-    async def test_convert_renders_template(
+    def test_convert_renders_template(
         self,
         integration: ConcreteIntegration,
         text_prompt: Prompt,
     ) -> None:
         """Test that convert() renders the template with variables."""
-        result = await integration.convert(text_prompt, {"name": "Alice"})
+        result = integration.convert(text_prompt, {"name": "Alice"})
 
         assert result == "Hello Alice!"
 
-    @pytest.mark.asyncio
-    async def test_convert_with_multiple_variables(
+    def test_convert_with_multiple_variables(
         self,
         integration: ConcreteIntegration,
     ) -> None:
@@ -131,7 +129,7 @@ class TestConcreteIntegration:
             ),
         )
 
-        result = await integration.convert(
+        result = integration.convert(
             prompt,
             {"greeting": "Hi", "name": "Bob", "place": "Wonderland"},
         )

@@ -1,0 +1,29 @@
+id: greeting
+version: 1.0.0
+uid: 665f959a-d563-4694-a10b-70ac97eb6a22
+format: text
+template:
+  content: Hello {{name}}! Welcome to {{service}}.
+  variables:
+  - name
+  - service
+  partials: {}
+  helpers: {}
+chat_template: null
+status: active
+created_at: '2025-11-26T21:57:20.122023'
+updated_at: '2025-11-26T21:57:20.122026'
+metadata:
+  author: System
+  description: Simple greeting prompt
+  tags:
+  - greeting
+  - welcome
+  category: general
+  use_cases: []
+  model_recommendations: []
+  temperature: null
+  max_tokens: null
+  custom: {}
+input_schema: null
+output_schema: null

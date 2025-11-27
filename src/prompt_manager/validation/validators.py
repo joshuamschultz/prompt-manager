@@ -6,11 +6,12 @@ Provides concrete validator classes for different validation types.
 
 import re
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from datetime import date, datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import EmailStr, HttpUrl
+from pydantic import EmailStr, HttpUrl, validate_email
 
 
 class BaseValidator(ABC):
@@ -210,8 +211,8 @@ class EmailValidator(BaseValidator):
             return False, f"Email must be string (got {type(value).__name__})"
 
         try:
-            # Use Pydantic's email validation
-            EmailStr._validate(value)
+            # Use Pydantic's email validation function instead of private method
+            validate_email(value)
             return True, None
         except ValueError as e:
             error = self.error_message or f"Invalid email address: {e}"
@@ -329,7 +330,7 @@ class CustomValidator(BaseValidator):
 
     def __init__(
         self,
-        validator_func: callable,
+        validator_func: Callable[[Any], bool],
         error_message: str | None = None,
     ) -> None:
         """
@@ -346,18 +347,21 @@ class CustomValidator(BaseValidator):
         """Validate using custom function."""
         try:
             result = self.validator_func(value)
-            if not isinstance(result, bool):
-                msg = f"Validator function must return bool (got {type(result).__name__})"
-                raise TypeError(msg)
-
-            if not result:
-                error = self.error_message or "Custom validation failed"
-                return False, error
-
-            return True, None
         except Exception as e:
+            # Validation function raised an exception
             error = self.error_message or f"Validation error: {e}"
             return False, error
+
+        # Check return type
+        if not isinstance(result, bool):
+            error = f"Validator function must return bool (got {type(result).__name__})"
+            return False, error
+
+        if not result:
+            error = self.error_message or "Custom validation failed"
+            return False, error
+
+        return True, None
 
 
 # Factory for creating validators from schema definitions

@@ -33,7 +33,7 @@ class LiteLLMIntegration(BaseIntegration[list[OpenAIMessage] | str]):
         >>> integration = LiteLLMIntegration(engine)
         >>>
         >>> # Works with any prompt format
-        >>> result = await integration.convert(prompt, {"name": "Alice"})
+        >>> result = integration.convert(prompt, {"name": "Alice"})
         >>> # Can be used with any LiteLLM-supported provider
 
     Reference:
@@ -54,7 +54,7 @@ class LiteLLMIntegration(BaseIntegration[list[OpenAIMessage] | str]):
             strict_validation=self._strict_validation,
         )
 
-    async def convert(
+    def convert(
         self,
         prompt: Prompt,
         variables: Mapping[str, Any],
@@ -76,10 +76,10 @@ class LiteLLMIntegration(BaseIntegration[list[OpenAIMessage] | str]):
             IntegrationError: If prompt format is not supported
 
         Example:
-            >>> result = await integration.convert(prompt, {"user": "Alice"})
+            >>> result = integration.convert(prompt, {"user": "Alice"})
         """
         # Delegate to OpenAI integration
-        return await self._openai_integration.convert(prompt, variables)
+        return self._openai_integration.convert(prompt, variables)
 
     def validate_compatibility(self, prompt: Prompt) -> bool:
         """Check if prompt is compatible with LiteLLM.

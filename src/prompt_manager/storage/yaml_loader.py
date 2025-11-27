@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-import aiofiles
 import structlog
 import yaml
 
@@ -30,7 +29,7 @@ class YAMLLoader:
         self._registry = registry
         self._logger = logger.bind(component="yaml_loader")
 
-    async def load_file(self, filepath: Path) -> PromptSchema:
+    def load_file(self, filepath: Path) -> PromptSchema:
         """
         Load and parse a YAML file.
 
@@ -47,8 +46,8 @@ class YAMLLoader:
         self._logger.info("loading_yaml", file=str(filepath))
 
         try:
-            async with aiofiles.open(filepath, "r") as f:
-                content = await f.read()
+            with open(filepath, "r") as f:
+                content = f.read()
 
             # Parse YAML
             data = yaml.safe_load(content)
@@ -75,7 +74,7 @@ class YAMLLoader:
             msg = f"Failed to validate schema: {e}"
             raise SchemaValidationError(msg, file=str(filepath)) from e
 
-    async def load_directory(self, dirpath: Path) -> list[PromptSchema]:
+    def load_directory(self, dirpath: Path) -> list[PromptSchema]:
         """
         Load all YAML files from a directory.
 
@@ -95,7 +94,7 @@ class YAMLLoader:
 
         for filepath in yaml_files:
             try:
-                schema = await self.load_file(filepath)
+                schema = self.load_file(filepath)
                 schemas.append(schema)
             except Exception as e:
                 self._logger.error(
@@ -114,7 +113,7 @@ class YAMLLoader:
 
         return schemas
 
-    async def import_to_registry(
+    def import_to_registry(
         self,
         filepath: Path,
         *,
@@ -139,11 +138,11 @@ class YAMLLoader:
             msg = "No registry available for import"
             raise ValueError(msg)
 
-        schema = await self.load_file(filepath)
+        schema = self.load_file(filepath)
 
         count = 0
         for prompt in schema.prompts:
-            await target_registry.register(prompt)
+            target_registry.register(prompt)
             count += 1
 
         self._logger.info(
@@ -154,7 +153,7 @@ class YAMLLoader:
 
         return count
 
-    async def import_directory_to_registry(
+    def import_directory_to_registry(
         self,
         dirpath: Path,
         *,
@@ -178,12 +177,12 @@ class YAMLLoader:
             msg = "No registry available for import"
             raise ValueError(msg)
 
-        schemas = await self.load_directory(dirpath)
+        schemas = self.load_directory(dirpath)
 
         total_count = 0
         for schema in schemas:
             for prompt in schema.prompts:
-                await target_registry.register(prompt)
+                target_registry.register(prompt)
                 total_count += 1
 
         self._logger.info(

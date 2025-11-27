@@ -16,7 +16,7 @@ A modern, production-ready Python 3.11+ prompt management system with Pydantic v
 - **Plugin Architecture**: Extensible framework integrations (OpenAI, Anthropic, LangChain, etc.)
 - **Versioning**: Full version history with semantic versioning and changelogs
 - **Observability**: Structured logging, metrics collection, and OpenTelemetry integration
-- **Async/Await**: Full async support for high-performance operations
+- **Dual Sync/Async Interface**: Use the same methods with or without `await` - works in both sync and async contexts
 - **Storage Backends**: File system and in-memory storage with pluggable interface
 - **Caching**: Optional caching layer for rendered prompts
 - **Protocol-Based Design**: Structural subtyping for flexible integration
@@ -36,7 +36,7 @@ All integrations support:
 - Role mapping and message structure validation
 - Type-safe outputs with full IDE support
 
-See [Framework Integration Examples](#framework-integration-examples) below for usage patterns.
+See [Framework Integration Examples](#framework-integrations) below for usage patterns.
 
 ## Installation
 
@@ -57,11 +57,182 @@ pip install agentic-prompt-manager[all]
 poetry install --with dev -E all
 ```
 
+## Dual Sync/Async Interface
+
+**NEW in v2.0**: All methods work **with or without `await`**! The library automatically detects your execution context and runs synchronously or asynchronously as needed.
+
+### Synchronous Usage (Scripts, Notebooks, CLI Tools)
+
+Perfect for simple scripts, Jupyter notebooks, and command-line tools where you don't want async complexity:
+
+```python
+from prompt_manager import PromptManager
+
+# No asyncio.run() needed!
+manager = PromptManager.create()
+
+# Create a prompt - no await
+prompt = manager.create_prompt({
+    "id": "greeting",
+    "version": "1.0.0",
+    "format": "text",
+    "template": {
+        "content": "Hello {{name}}! Welcome to {{service}}."
+    }
+})
+
+# Render - no await
+result = manager.render("greeting", {
+    "name": "Alice",
+    "service": "Prompt Manager"
+})
+print(result)  # "Hello Alice! Welcome to Prompt Manager."
+
+# List all prompts - no await
+prompts = manager.list_prompts()
+print(f"Total prompts: {len(prompts)}")
+```
+
+### Asynchronous Usage (FastAPI, aiohttp, async apps)
+
+Perfect for web servers, high-concurrency applications, and async workflows:
+
+```python
+from prompt_manager import PromptManager
+
+# Same API, just add await!
+manager = await PromptManager.create()
+
+# Create a prompt - with await
+prompt = await manager.create_prompt({
+    "id": "greeting",
+    "version": "1.0.0",
+    "format": "text",
+    "template": {
+        "content": "Hello {{name}}! Welcome to {{service}}."
+    }
+})
+
+# Render - with await
+result = await manager.render("greeting", {
+    "name": "Alice",
+    "service": "Prompt Manager"
+})
+
+# List all prompts - with await
+prompts = await manager.list_prompts()
+```
+
+### How It Works
+
+The dual interface automatically detects your execution context:
+
+- **In async functions** (`async def`): Returns a coroutine that you `await`
+- **In regular functions**: Executes synchronously and returns the result directly
+- **No configuration needed**: The library handles everything automatically
+
+### Complete Method Coverage (46 Methods)
+
+All these methods work with or without `await`:
+
+**PromptManager** (9 methods):
+- `render()` - Render prompts with variables
+- `render_for_plugin()` - Render for specific framework
+- `render_and_parse()` - Render and parse JSON output
+- `create_prompt()` - Create new prompts
+- `get_prompt()` - Retrieve prompts by ID
+- `update_prompt()` - Update existing prompts
+- `list_prompts()` - List and filter prompts
+- `get_history()` - Get version history
+- `validate_output()` - Validate output against schema
+- `load_schemas()` - Load validation schemas
+- `get_metrics()` - Get performance metrics
+
+**PromptRegistry** (10 methods):
+- `register()` - Register a prompt
+- `get()` - Get prompt by ID
+- `update()` - Update a prompt
+- `delete()` - Delete a prompt
+- `list()` - List all prompts
+- `exists()` - Check if prompt exists
+- `count()` - Count total prompts
+- `get_versions()` - Get version history
+- `load_from_storage()` - Load prompts from storage
+
+**Storage Backends** (10 methods total):
+- `save()` - Save prompt to storage
+- `load()` - Load prompt from storage
+- `delete()` - Delete prompt from storage
+- `list()` - List all stored prompts
+- `exists()` - Check if prompt exists
+- `clear()` - Clear all prompts (MemoryStorage only)
+
+**VersionStore** (9 methods):
+- `save_version()` - Save a version
+- `get_version()` - Get specific version
+- `list_versions()` - List all versions
+- `get_latest()` - Get latest version
+- `get_history()` - Get version history
+- `get_changelog()` - Get formatted changelog
+- `compare_versions()` - Compare two versions
+- `load_from_storage()` - Load versions from storage
+
+**TemplateEngine** (3 methods):
+- `render()` - Render template with variables
+- `validate()` - Validate template syntax
+- `render_messages()` - Render chat messages (ChatTemplateEngine)
+
+**SchemaLoader** (3 methods):
+- `load_file()` - Load schema from file
+- `load_directory()` - Load schemas from directory
+- `validate_data()` - Validate data against schema
+
+### Why This Matters
+
+- ✅ **Same code works in FastAPI (async) and Flask (sync)**
+- ✅ **Use in Jupyter notebooks without async complexity**
+- ✅ **Simple CLI tools don't need `asyncio.run()`**
+- ✅ **Gradual migration from sync to async code**
+- ✅ **Test sync and async code paths with same tests**
+- ✅ **No breaking changes - all existing async code still works**
+
+### Migration Guide
+
+**Existing async code? No changes needed!** All your existing code with `await` continues to work:
+
+```python
+# This still works perfectly
+result = await manager.render("greeting", {"name": "Alice"})
+```
+
+**Want to simplify?** Just remove `await` and `asyncio.run()`:
+
+```python
+# Before (v1.x)
+import asyncio
+
+async def main():
+    result = await manager.render("greeting", {"name": "Alice"})
+    return result
+
+result = asyncio.run(main())
+
+# After (v2.0)
+result = manager.render("greeting", {"name": "Alice"})
+```
+
+For complete migration guide, troubleshooting, and best practices, see:
+- [Migration Guide](MIGRATION.md) - Detailed migration instructions
+- [Best Practices](docs/BEST_PRACTICES.md) - When to use sync vs async
+- [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
+
 ## Quick Start
 
 ### Simplest Flow - YAML to LLM in 4 Steps
 
-The fastest way to get started - load a YAML prompt and use it with any LLM:
+The fastest way to get started - load a YAML prompt and use it with any LLM.
+
+**Works both synchronously and asynchronously:**
 
 ```python
 from prompt_manager import PromptManager
@@ -79,17 +250,26 @@ loader = YAMLLoader(registry)
 await loader.import_directory_to_registry(Path("prompts/"))
 
 # 3. Render and use with your LLM
+# ✨ NEW: Works with or without await!
+
+# Async usage (in async functions):
 prompt_text = await manager.render("greeting", {
     "name": "Alice",
     "service": "Prompt Manager"
 })
 
+# Sync usage (in regular functions):
+prompt_text = manager.render("greeting", {
+    "name": "Bob",
+    "service": "Prompt Manager"
+})
+
 # 4. Validate output (optional)
 await manager.load_schemas(Path("schemas/"))
-validated = await manager.validate_output(
-    "user_profile",  # schema name
-    llm_response     # LLM's JSON response
-)
+
+# Both sync and async work:
+validated = await manager.validate_output("user_profile", llm_response)  # async
+validated = manager.validate_output("user_profile", llm_response)        # sync
 ```
 
 **Example YAML prompt:**
@@ -729,15 +909,17 @@ Contributions welcome! Please ensure:
 - Black formatting applied
 - Security scans pass
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+
 ## Roadmap
 
 ### Completed ✅
 - [x] Auto loading YAML files from directory
 - [x] Optional storage with sensible defaults
 - [x] Additional plugin implementations (OpenAI, Anthropic, LangChain, LiteLLM)
+- [x] **Dual Sync/Async Interface** - All methods work with or without `await` - automatically detects execution context
 
 ### Planned Features
-- [ ] **Synchronous API wrapper** - Simple sync interface for basic use cases that don't need async/await
 - [ ] Security Features
   - [ ] Prompt access control / permissions
   - [ ] Audit logging for prompt changes

@@ -1,7 +1,7 @@
 """
 Template rendering engine using Handlebars (pybars4).
 
-Provides async template rendering with variable extraction and validation.
+Provides template rendering with variable extraction and validation.
 """
 
 import re
@@ -15,7 +15,7 @@ from prompt_manager.exceptions import TemplateError, TemplateRenderError, Templa
 
 class TemplateEngine:
     """
-    Handlebars template engine with async support.
+    Handlebars template engine.
 
     Implements TemplateEngineProtocol for dependency injection.
     """
@@ -25,7 +25,7 @@ class TemplateEngine:
         self._compiler = Compiler()
         self._variable_pattern = re.compile(r"\{\{([^}]+)\}\}")
 
-    async def render(
+    def render(
         self,
         template: str,
         variables: Mapping[str, Any],
@@ -46,10 +46,16 @@ class TemplateEngine:
         Raises:
             TemplateRenderError: If rendering fails
             TemplateSyntaxError: If template syntax is invalid
+
+        Example:
+            >>> engine = TemplateEngine()
+            >>> result = engine.render("Hello {{name}}", {"name": "World"})
+            >>> print(result)
+            Hello World
         """
         try:
             # Validate template syntax first
-            await self.validate(template)
+            self.validate(template)
 
             # Compile template
             compiled_template = self._compiler.compile(template)
@@ -81,7 +87,7 @@ class TemplateEngine:
         except Exception as e:
             raise TemplateRenderError(template, dict(variables), e) from e
 
-    async def validate(self, template: str) -> bool:
+    def validate(self, template: str) -> bool:
         """
         Validate Handlebars template syntax.
 
@@ -93,6 +99,12 @@ class TemplateEngine:
 
         Raises:
             TemplateSyntaxError: If template is invalid
+
+        Example:
+            >>> engine = TemplateEngine()
+            >>> is_valid = engine.validate("{{name}}")
+            >>> print(is_valid)
+            True
         """
         try:
             self._compiler.compile(template)
@@ -157,7 +169,7 @@ class TemplateEngine:
         Example:
             >>> engine = TemplateEngine()
             >>> engine.register_helper('upper', lambda this, text: text.upper())
-            >>> await engine.render('{{upper name}}', {'name': 'john'})
+            >>> engine.render('{{upper name}}', {'name': 'john'})
             'JOHN'
         """
         # Note: pybars4 doesn't have a direct register_helper API
@@ -182,7 +194,7 @@ class ChatTemplateEngine:
         """Initialize chat template engine."""
         self._template_engine = TemplateEngine()
 
-    async def render_messages(
+    def render_messages(
         self,
         messages: list[dict[str, Any]],
         variables: Mapping[str, Any],
@@ -199,6 +211,13 @@ class ChatTemplateEngine:
 
         Raises:
             TemplateRenderError: If rendering fails
+
+        Example:
+            >>> engine = ChatTemplateEngine()
+            >>> messages = [{"role": "user", "content": "Hello {{name}}"}]
+            >>> result = engine.render_messages(messages, {"name": "World"})
+            >>> print(result)
+            [{'role': 'user', 'content': 'Hello World'}]
         """
         rendered_messages = []
 
@@ -208,7 +227,7 @@ class ChatTemplateEngine:
 
             # Render content if it contains variables
             if "{{" in content_template:
-                rendered_content = await self._template_engine.render(
+                rendered_content = self._template_engine.render(
                     content_template,
                     variables,
                 )

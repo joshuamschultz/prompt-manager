@@ -28,7 +28,7 @@ def langchain_integration(template_engine):
 class TestLangChainE2E:
     @pytest.mark.integration
     @pytest.mark.skipif(not LANGCHAIN_AVAILABLE, reason="LangChain not installed")
-    async def test_text_to_prompt_template(self, langchain_integration):
+    def test_text_to_prompt_template(self, langchain_integration):
         """Test converting text prompt to LangChain PromptTemplate."""
         prompt = Prompt(
             id="test",
@@ -36,7 +36,7 @@ class TestLangChainE2E:
             template=PromptTemplate(content="Hello {name}!"),
         )
 
-        result = await langchain_integration.convert(prompt, {})
+        result = langchain_integration.convert(prompt, {})
 
         # Verify it's a LangChain PromptTemplate
         assert result is not None
@@ -44,7 +44,7 @@ class TestLangChainE2E:
 
     @pytest.mark.integration
     @pytest.mark.skipif(not LANGCHAIN_AVAILABLE, reason="LangChain not installed")
-    async def test_chat_to_chat_prompt_template(self, langchain_integration):
+    def test_chat_to_chat_prompt_template(self, langchain_integration):
         """Test converting chat prompt to LangChain ChatPromptTemplate."""
         prompt = Prompt(
             id="test",
@@ -57,7 +57,7 @@ class TestLangChainE2E:
             ),
         )
 
-        result = await langchain_integration.convert(prompt, {})
+        result = langchain_integration.convert(prompt, {})
 
         # Verify it's a LangChain ChatPromptTemplate
         assert result is not None
