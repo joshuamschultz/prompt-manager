@@ -31,7 +31,7 @@ class LangChainPlugin(BasePlugin):
         super().__init__(name="langchain", version="1.0.0")
         self._integration: Any = None
 
-    async def _initialize_impl(self, config: Mapping[str, Any]) -> None:
+    def _initialize_impl(self, config: Mapping[str, Any]) -> None:
         """Initialize LangChain integration.
 
         Args:
@@ -65,7 +65,7 @@ class LangChainPlugin(BasePlugin):
             msg = f"Failed to initialize LangChain integration: {e}"
             raise PluginError(msg) from e
 
-    async def render_for_framework(
+    def render_for_framework(
         self,
         prompt: Prompt,
         variables: Mapping[str, Any],
@@ -98,9 +98,9 @@ class LangChainPlugin(BasePlugin):
             raise PluginError(msg)
 
         # Delegate to integration
-        return await self._integration.convert(prompt, variables)
+        return self._integration.convert(prompt, variables)
 
-    async def validate_compatibility(self, prompt: Prompt) -> bool:
+    def validate_compatibility(self, prompt: Prompt) -> bool:
         """Check if prompt is compatible with LangChain.
 
         Args:
@@ -123,4 +123,4 @@ class LangChainPlugin(BasePlugin):
             raise PluginError(msg)
 
         # Delegate to integration
-        return self._integration.validate_compatibility(prompt)
+        return self._integration.validate_compatibility(prompt)  # type: ignore[no-any-return]

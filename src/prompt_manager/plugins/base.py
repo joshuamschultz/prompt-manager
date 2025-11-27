@@ -34,7 +34,7 @@ class BasePlugin(ABC):
         self._initialized = False
         self._logger = logger.bind(plugin=name)
 
-    async def initialize(self, config: Mapping[str, Any]) -> None:
+    def initialize(self, config: Mapping[str, Any]) -> None:
         """
         Initialize the plugin with configuration.
 
@@ -48,7 +48,7 @@ class BasePlugin(ABC):
 
         try:
             self._config = dict(config)
-            await self._initialize_impl(config)
+            self._initialize_impl(config)
             self._initialized = True
 
             self._logger.info("plugin_initialized")
@@ -58,7 +58,7 @@ class BasePlugin(ABC):
             raise PluginError(msg) from e
 
     @abstractmethod
-    async def _initialize_impl(self, config: Mapping[str, Any]) -> None:
+    def _initialize_impl(self, config: Mapping[str, Any]) -> None:
         """
         Plugin-specific initialization logic.
 
@@ -68,7 +68,7 @@ class BasePlugin(ABC):
         ...
 
     @abstractmethod
-    async def render_for_framework(
+    def render_for_framework(
         self,
         prompt: Prompt,
         variables: Mapping[str, Any],
@@ -89,7 +89,7 @@ class BasePlugin(ABC):
         ...
 
     @abstractmethod
-    async def validate_compatibility(self, prompt: Prompt) -> bool:
+    def validate_compatibility(self, prompt: Prompt) -> bool:
         """
         Check if prompt is compatible with framework.
 
@@ -104,7 +104,7 @@ class BasePlugin(ABC):
         """
         ...
 
-    async def shutdown(self) -> None:
+    def shutdown(self) -> None:
         """Clean up plugin resources."""
         self._logger.info("shutting_down_plugin")
         self._initialized = False

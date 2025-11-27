@@ -44,24 +44,24 @@ from prompt_manager.exceptions import (
 # ============================================================================
 
 
-@pytest.mark.asyncio
-async def test_nested_event_loop_detection_in_async_context(file_manager: PromptManager):
+
+def test_nested_event_loop_detection_in_async_context(file_manager: PromptManager):
     """Test that run_sync() raises clear error when called from async context."""
     # Inside async context, trying to use run_sync should raise
     with pytest.raises(RuntimeError, match="Cannot call synchronous method from async context"):
         from prompt_manager.utils.async_helpers import run_sync
         # Create a simple coroutine to test
-        async def simple_coro():
+        def simple_coro():
             return "test"
         run_sync(simple_coro())
 
 
-@pytest.mark.asyncio
-async def test_nested_loop_error_message_includes_example(file_manager: PromptManager):
+
+def test_nested_loop_error_message_includes_example(file_manager: PromptManager):
     """Verify error message includes usage example."""
     with pytest.raises(RuntimeError) as exc_info:
         from prompt_manager.utils.async_helpers import run_sync
-        async def dummy():
+        def dummy():
             return []
         run_sync(dummy())
 
@@ -71,8 +71,8 @@ async def test_nested_loop_error_message_includes_example(file_manager: PromptMa
     assert "Example:" in error_message
 
 
-@pytest.mark.asyncio
-async def test_nested_loop_detection_with_get_or_create_loop():
+
+def test_nested_loop_detection_with_get_or_create_loop():
     """Test get_or_create_event_loop raises error in async context."""
     from prompt_manager.utils.async_helpers import get_or_create_event_loop
 
@@ -80,15 +80,15 @@ async def test_nested_loop_detection_with_get_or_create_loop():
         get_or_create_event_loop()
 
 
-async def simulated_fastapi_handler(manager: PromptManager) -> dict[str, Any]:
+def simulated_fastapi_handler(manager: PromptManager) -> dict[str, Any]:
     """Simulate a FastAPI handler (async context)."""
     # Proper async usage
-    prompts = await manager.list_prompts()
+    prompts = manager.list_prompts()
     return {"count": len(prompts)}
 
 
-@pytest.mark.asyncio
-async def test_nested_loop_in_simulated_fastapi(file_manager: PromptManager):
+
+def test_nested_loop_in_simulated_fastapi(file_manager: PromptManager):
     """Test correct async usage in simulated FastAPI handler."""
     # Create test prompts
     for i in range(3):
@@ -100,32 +100,32 @@ async def test_nested_loop_in_simulated_fastapi(file_manager: PromptManager):
             template=PromptTemplate(content=f"Test {i}", variables=[]),
             metadata=PromptMetadata(author="Test", description=f"Prompt {i}"),
         )
-        await file_manager.create_prompt(prompt)
+        file_manager.create_prompt(prompt)
 
     # Proper async usage should work fine
-    result = await simulated_fastapi_handler(file_manager)
+    result = simulated_fastapi_handler(file_manager)
     assert result["count"] == 3
 
 
-async def broken_fastapi_handler(manager: PromptManager) -> dict[str, Any]:
+def broken_fastapi_handler(manager: PromptManager) -> dict[str, Any]:
     """Simulate a broken FastAPI handler (attempts sync call in async context)."""
     # This is wrong and should raise
     from prompt_manager.utils.async_helpers import run_sync
-    async def list_coro():
-        return await manager.list_prompts()
+    def list_coro():
+        return manager.list_prompts()
     prompts = run_sync(list_coro())
     return {"count": len(prompts)}
 
 
-@pytest.mark.asyncio
-async def test_nested_loop_error_in_simulated_fastapi(file_manager: PromptManager):
+
+def test_nested_loop_error_in_simulated_fastapi(file_manager: PromptManager):
     """Test that incorrect sync call in FastAPI handler raises error."""
     with pytest.raises(RuntimeError, match="Cannot call synchronous method"):
-        await broken_fastapi_handler(file_manager)
+        broken_fastapi_handler(file_manager)
 
 
-@pytest.mark.asyncio
-async def test_is_async_context_detection():
+
+def test_is_async_context_detection():
     """Test is_async_context correctly detects async context."""
     from prompt_manager.utils.async_helpers import is_async_context
 
@@ -133,10 +133,10 @@ async def test_is_async_context_detection():
     assert is_async_context() is True
 
     # Nested async call should still be True
-    async def nested():
+    def nested():
         return is_async_context()
 
-    assert await nested() is True
+    assert nested() is True
 
 
 # ============================================================================
@@ -265,8 +265,8 @@ def test_prompt_not_found_error_consistency(file_manager: PromptManager):
     sync_message = str(sync_error)
 
     # Async mode
-    async def async_get():
-        return await file_manager.get_prompt("nonexistent_prompt_id")
+    def async_get():
+        return file_manager.get_prompt("nonexistent_prompt_id")
 
     with pytest.raises(PromptNotFoundError) as exc_info_async:
         asyncio.run(async_get())
@@ -307,8 +307,8 @@ def test_template_render_error_consistency(file_manager: PromptManager):
     sync_message = str(exc_info_sync.value)
 
     # Async mode - missing required variable
-    async def async_render():
-        return await file_manager.render("failing_template", {})
+    def async_render():
+        return file_manager.render("failing_template", {})
 
     with pytest.raises((TemplateError, TemplateRenderError)) as exc_info_async:
         asyncio.run(async_render())
@@ -346,8 +346,8 @@ def test_template_syntax_error_consistency(file_manager: PromptManager):
         sync_exception_type = type(e).__name__
 
     # Async mode
-    async def async_create():
-        return await file_manager.create_prompt(prompt)
+    def async_create():
+        return file_manager.create_prompt(prompt)
 
     async_exception_type = None
     try:
@@ -384,8 +384,8 @@ def test_schema_validation_error_consistency(file_manager: PromptManager, integr
     sync_message = str(exc_info_sync.value)
 
     # Async mode
-    async def async_validate():
-        return await file_manager.validate_output(invalid_data, schema_id)
+    def async_validate():
+        return file_manager.validate_output(invalid_data, schema_id)
 
     with pytest.raises(SchemaValidationError) as exc_info_async:
         asyncio.run(async_validate())
@@ -410,8 +410,8 @@ def test_schema_parse_error_consistency(file_manager: PromptManager, integration
     sync_exception_type = type(exc_info_sync.value).__name__
 
     # Async mode
-    async def async_load():
-        return await file_manager.load_schemas(str(schema_file))
+    def async_load():
+        return file_manager.load_schemas(str(schema_file))
 
     with pytest.raises((SchemaParseError, json.JSONDecodeError)) as exc_info_async:
         asyncio.run(async_load())
@@ -443,8 +443,8 @@ def test_version_not_found_error_consistency(file_manager: PromptManager):
     sync_message = str(exc_info_sync.value)
 
     # Async mode
-    async def async_get():
-        return await file_manager.get_prompt("version_test", version="99.99.99")
+    def async_get():
+        return file_manager.get_prompt("version_test", version="99.99.99")
 
     with pytest.raises((VersionNotFoundError, PromptNotFoundError)) as exc_info_async:
         asyncio.run(async_get())
@@ -467,8 +467,8 @@ def test_storage_error_exception_consistency(file_manager: PromptManager):
         file_manager.get_prompt("nonexistent_storage_test")
 
     # Async mode
-    async def async_get():
-        return await file_manager.get_prompt("nonexistent_storage_test")
+    def async_get():
+        return file_manager.get_prompt("nonexistent_storage_test")
 
     with pytest.raises(PromptNotFoundError) as exc_info_async:
         asyncio.run(async_get())
@@ -489,8 +489,8 @@ def test_exception_attributes_preserved(file_manager: PromptManager):
     assert sync_error.context["version"] == "1.2.3"
 
     # Async mode
-    async def async_get():
-        return await file_manager.get_prompt("test_attrs", version="1.2.3")
+    def async_get():
+        return file_manager.get_prompt("test_attrs", version="1.2.3")
 
     with pytest.raises(PromptNotFoundError) as exc_info_async:
         asyncio.run(async_get())
@@ -543,8 +543,8 @@ def test_file_permission_error_sync_mode(integration_tmp_path: Path):
         readonly_dir.chmod(0o755)
 
 
-@pytest.mark.asyncio
-async def test_file_permission_error_async_mode(integration_tmp_path: Path):
+
+def test_file_permission_error_async_mode(integration_tmp_path: Path):
     """Test file permission errors in async mode."""
     from prompt_manager.core.registry import PromptRegistry
     from prompt_manager.storage.file import FileSystemStorage
@@ -572,7 +572,7 @@ async def test_file_permission_error_async_mode(integration_tmp_path: Path):
 
         # Async mode should raise storage error
         with pytest.raises((StorageWriteError, PermissionError, OSError)):
-            await manager.create_prompt(prompt)
+            manager.create_prompt(prompt)
 
     finally:
         # Cleanup - restore permissions
@@ -592,8 +592,8 @@ def test_corrupted_file_error_sync_mode(file_manager: PromptManager, integration
         file_manager._registry._storage.load("corrupted_prompt")
 
 
-@pytest.mark.asyncio
-async def test_corrupted_file_error_async_mode(file_manager: PromptManager, integration_tmp_path: Path):
+
+def test_corrupted_file_error_async_mode(file_manager: PromptManager, integration_tmp_path: Path):
     """Test corrupted file errors in async mode."""
     # Create a corrupted prompt file directly
     storage_path = integration_tmp_path / "prompts"
@@ -603,7 +603,7 @@ async def test_corrupted_file_error_async_mode(file_manager: PromptManager, inte
 
     # Try to load corrupted file in async mode
     with pytest.raises((StorageReadError, json.JSONDecodeError)):
-        await file_manager._registry._storage.load("corrupted_prompt_async")
+        file_manager._registry._storage.load("corrupted_prompt_async")
 
 
 def test_missing_file_error_consistency(file_manager: PromptManager):
@@ -613,8 +613,8 @@ def test_missing_file_error_consistency(file_manager: PromptManager):
         file_manager.get_prompt("definitely_does_not_exist")
 
     # Async mode
-    async def async_get():
-        return await file_manager.get_prompt("definitely_does_not_exist")
+    def async_get():
+        return file_manager.get_prompt("definitely_does_not_exist")
 
     with pytest.raises(PromptNotFoundError):
         asyncio.run(async_get())
@@ -647,8 +647,8 @@ def test_partial_failure_no_state_corruption_sync(file_manager: PromptManager):
     file_manager._registry.delete("valid_before_failure")
 
 
-@pytest.mark.asyncio
-async def test_partial_failure_no_state_corruption_async(file_manager: PromptManager):
+
+def test_partial_failure_no_state_corruption_async(file_manager: PromptManager):
     """Verify partial failures don't corrupt state in async mode."""
     # Create a valid prompt
     valid_prompt = Prompt(
@@ -659,20 +659,20 @@ async def test_partial_failure_no_state_corruption_async(file_manager: PromptMan
         template=PromptTemplate(content="Valid", variables=[]),
         metadata=PromptMetadata(author="Test", description="Valid"),
     )
-    await file_manager.create_prompt(valid_prompt)
+    file_manager.create_prompt(valid_prompt)
 
     # Attempt operation that will fail
     try:
-        await file_manager.get_prompt("nonexistent")
+        file_manager.get_prompt("nonexistent")
     except PromptNotFoundError:
         pass
 
     # Verify previous prompt still accessible
-    retrieved = await file_manager.get_prompt("valid_before_failure_async")
+    retrieved = file_manager.get_prompt("valid_before_failure_async")
     assert retrieved.id == "valid_before_failure_async"
 
     # Clean up
-    await file_manager._registry.delete("valid_before_failure_async")
+    file_manager._registry.delete("valid_before_failure_async")
 
 
 def test_storage_error_handling_with_recovery(file_manager: PromptManager):

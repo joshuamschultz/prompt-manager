@@ -36,7 +36,7 @@ class OpenAIPlugin(BasePlugin):
         super().__init__(name="openai", version="1.0.0")
         self._integration: OpenAIIntegration | None = None
 
-    async def _initialize_impl(self, config: Mapping[str, Any]) -> None:
+    def _initialize_impl(self, config: Mapping[str, Any]) -> None:
         """Initialize OpenAI integration.
 
         Args:
@@ -68,7 +68,7 @@ class OpenAIPlugin(BasePlugin):
             msg = f"Failed to initialize OpenAI integration: {e}"
             raise PluginError(msg) from e
 
-    async def render_for_framework(
+    def render_for_framework(
         self,
         prompt: Prompt,
         variables: Mapping[str, Any],
@@ -101,9 +101,9 @@ class OpenAIPlugin(BasePlugin):
             raise PluginError(msg)
 
         # Delegate to integration
-        return await self._integration.convert(prompt, variables)
+        return self._integration.convert(prompt, variables)
 
-    async def validate_compatibility(self, prompt: Prompt) -> bool:
+    def validate_compatibility(self, prompt: Prompt) -> bool:
         """Check if prompt is compatible with OpenAI.
 
         OpenAI supports all prompt formats (TEXT and CHAT).

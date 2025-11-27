@@ -16,7 +16,7 @@ from prompt_manager.core.models import Prompt, PromptExecution, PromptVersion
 class TemplateEngineProtocol(Protocol):
     """Protocol for template rendering engines."""
 
-    async def render(
+    def render(
         self,
         template: str,
         variables: Mapping[str, Any],
@@ -39,7 +39,7 @@ class TemplateEngineProtocol(Protocol):
         """
         ...
 
-    async def validate(self, template: str) -> bool:
+    def validate(self, template: str) -> bool:
         """
         Validate template syntax.
 
@@ -71,7 +71,7 @@ class TemplateEngineProtocol(Protocol):
 class StorageBackendProtocol(Protocol):
     """Protocol for storage backends."""
 
-    async def save(self, prompt: Prompt) -> None:
+    def save(self, prompt: Prompt) -> None:
         """
         Save a prompt to storage.
 
@@ -83,7 +83,7 @@ class StorageBackendProtocol(Protocol):
         """
         ...
 
-    async def load(self, prompt_id: str, version: str | None = None) -> Prompt:
+    def load(self, prompt_id: str, version: str | None = None) -> Prompt:
         """
         Load a prompt from storage.
 
@@ -100,7 +100,7 @@ class StorageBackendProtocol(Protocol):
         """
         ...
 
-    async def delete(self, prompt_id: str, version: str | None = None) -> None:
+    def delete(self, prompt_id: str, version: str | None = None) -> None:
         """
         Delete a prompt from storage.
 
@@ -114,7 +114,7 @@ class StorageBackendProtocol(Protocol):
         """
         ...
 
-    async def list(
+    def list(
         self,
         *,
         tags: list[str] | None = None,
@@ -135,7 +135,7 @@ class StorageBackendProtocol(Protocol):
         """
         ...
 
-    async def exists(self, prompt_id: str, version: str | None = None) -> bool:
+    def exists(self, prompt_id: str, version: str | None = None) -> bool:
         """
         Check if a prompt exists.
 
@@ -153,7 +153,7 @@ class StorageBackendProtocol(Protocol):
 class VersionStoreProtocol(Protocol):
     """Protocol for version storage."""
 
-    async def save_version(self, version: PromptVersion) -> None:
+    def save_version(self, version: PromptVersion) -> None:
         """
         Save a prompt version.
 
@@ -165,7 +165,7 @@ class VersionStoreProtocol(Protocol):
         """
         ...
 
-    async def get_version(self, prompt_id: str, version: str) -> PromptVersion:
+    def get_version(self, prompt_id: str, version: str) -> PromptVersion:
         """
         Get a specific version.
 
@@ -181,7 +181,7 @@ class VersionStoreProtocol(Protocol):
         """
         ...
 
-    async def list_versions(self, prompt_id: str) -> list[PromptVersion]:
+    def list_versions(self, prompt_id: str) -> list[PromptVersion]:
         """
         List all versions for a prompt.
 
@@ -196,7 +196,7 @@ class VersionStoreProtocol(Protocol):
         """
         ...
 
-    async def get_latest(self, prompt_id: str) -> PromptVersion:
+    def get_latest(self, prompt_id: str) -> PromptVersion:
         """
         Get the latest version.
 
@@ -211,7 +211,7 @@ class VersionStoreProtocol(Protocol):
         """
         ...
 
-    async def get_history(
+    def get_history(
         self,
         prompt_id: str,
         *,
@@ -239,7 +239,7 @@ class VersionStoreProtocol(Protocol):
 class ObserverProtocol(Protocol):
     """Protocol for observability hooks."""
 
-    async def on_render_start(
+    def on_render_start(
         self,
         prompt_id: str,
         version: str,
@@ -255,7 +255,7 @@ class ObserverProtocol(Protocol):
         """
         ...
 
-    async def on_render_complete(
+    def on_render_complete(
         self,
         prompt_id: str,
         version: str,
@@ -271,7 +271,7 @@ class ObserverProtocol(Protocol):
         """
         ...
 
-    async def on_render_error(
+    def on_render_error(
         self,
         prompt_id: str,
         version: str,
@@ -287,7 +287,34 @@ class ObserverProtocol(Protocol):
         """
         ...
 
-    async def on_version_created(self, version: PromptVersion) -> None:
+    def on_prompt_registered(self, prompt: Prompt) -> None:
+        """
+        Called when a prompt is registered.
+
+        Args:
+            prompt: The prompt that was registered
+        """
+        ...
+
+    def on_prompt_updated(self, prompt: Prompt) -> None:
+        """
+        Called when a prompt is updated.
+
+        Args:
+            prompt: The prompt that was updated
+        """
+        ...
+
+    def on_prompt_deleted(self, prompt: Prompt) -> None:
+        """
+        Called when a prompt is deleted.
+
+        Args:
+            prompt: The prompt that was deleted
+        """
+        ...
+
+    def on_version_created(self, version: PromptVersion) -> None:
         """
         Called when a new version is created.
 
@@ -304,7 +331,7 @@ class PluginProtocol(Protocol):
     name: str
     version: str
 
-    async def initialize(self, config: Mapping[str, Any]) -> None:
+    def initialize(self, config: Mapping[str, Any]) -> None:
         """
         Initialize the plugin.
 
@@ -316,7 +343,7 @@ class PluginProtocol(Protocol):
         """
         ...
 
-    async def render_for_framework(
+    def render_for_framework(
         self,
         prompt: Prompt,
         variables: Mapping[str, Any],
@@ -336,7 +363,7 @@ class PluginProtocol(Protocol):
         """
         ...
 
-    async def validate_compatibility(self, prompt: Prompt) -> bool:
+    def validate_compatibility(self, prompt: Prompt) -> bool:
         """
         Check if prompt is compatible with framework.
 
@@ -348,7 +375,7 @@ class PluginProtocol(Protocol):
         """
         ...
 
-    async def shutdown(self) -> None:
+    def shutdown(self) -> None:
         """Clean up plugin resources."""
         ...
 
@@ -357,7 +384,7 @@ class PluginProtocol(Protocol):
 class CacheProtocol(Protocol):
     """Protocol for caching rendered prompts."""
 
-    async def get(
+    def get(
         self,
         key: str,
     ) -> str | None:
@@ -372,7 +399,7 @@ class CacheProtocol(Protocol):
         """
         ...
 
-    async def set(
+    def set(
         self,
         key: str,
         value: str,
@@ -389,7 +416,7 @@ class CacheProtocol(Protocol):
         """
         ...
 
-    async def invalidate(self, pattern: str) -> int:
+    def invalidate(self, pattern: str) -> int:
         """
         Invalidate cache entries matching pattern.
 
@@ -401,7 +428,7 @@ class CacheProtocol(Protocol):
         """
         ...
 
-    async def clear(self) -> None:
+    def clear(self) -> None:
         """Clear all cache entries."""
         ...
 
@@ -410,7 +437,7 @@ class CacheProtocol(Protocol):
 class EventStreamProtocol(Protocol):
     """Protocol for event streaming."""
 
-    async def publish(
+    def publish(
         self,
         event_type: str,
         payload: Mapping[str, Any],
@@ -424,7 +451,7 @@ class EventStreamProtocol(Protocol):
         """
         ...
 
-    async def subscribe(
+    def subscribe(
         self,
         event_type: str,
     ) -> AsyncIterator[Mapping[str, Any]]:
@@ -444,7 +471,7 @@ class EventStreamProtocol(Protocol):
 class MetricsCollectorProtocol(Protocol):
     """Protocol for metrics collection."""
 
-    async def record_render(
+    def record_render(
         self,
         prompt_id: str,
         version: str,
@@ -462,15 +489,15 @@ class MetricsCollectorProtocol(Protocol):
         """
         ...
 
-    async def record_cache_hit(self, prompt_id: str) -> None:
+    def record_cache_hit(self, prompt_id: str) -> None:
         """Record a cache hit."""
         ...
 
-    async def record_cache_miss(self, prompt_id: str) -> None:
+    def record_cache_miss(self, prompt_id: str) -> None:
         """Record a cache miss."""
         ...
 
-    async def get_metrics(
+    def get_metrics(
         self,
         *,
         since: datetime | None = None,

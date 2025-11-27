@@ -19,8 +19,8 @@ from prompt_manager.versioning.store import VersionStore
 class TestAsyncWorkflow:
     """Test complete CRUD workflow in async mode with concurrent operations."""
 
-    @pytest.mark.asyncio
-    async def test_complete_async_crud_workflow(
+    
+    def test_complete_async_crud_workflow(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -36,7 +36,7 @@ class TestAsyncWorkflow:
         # Create 10 prompts
         created_prompts = []
         for i, prompt in enumerate(test_prompts[:10]):
-            created = await file_manager.create_prompt(
+            created = file_manager.create_prompt(
                 prompt,
                 changelog=f"Initial creation of prompt {i}"
             )
@@ -53,7 +53,7 @@ class TestAsyncWorkflow:
         # Render each prompt
         rendered_results = []
         for prompt in created_prompts[:5]:  # Text prompts
-            result = await file_manager.render(prompt.id, sample_variables)
+            result = file_manager.render(prompt.id, sample_variables)
             assert isinstance(result, str)
             assert len(result) > 0
             rendered_results.append(result)
@@ -61,36 +61,36 @@ class TestAsyncWorkflow:
         # Update 5 prompts
         updated_prompts = []
         for i, prompt in enumerate(created_prompts[:5]):
-            current_prompt = await file_manager.get_prompt(prompt.id)
+            current_prompt = file_manager.get_prompt(prompt.id)
             updated_current_prompt = current_prompt.model_copy(update={
                 "template": current_prompt.template.model_copy(update={"content": f"Updated: {prompt.template.content}"})
             })
-            updated = await file_manager.update_prompt(updated_current_prompt, changelog=f"Update {i}")
+            updated = file_manager.update_prompt(updated_current_prompt, changelog=f"Update {i}")
             updated_prompts.append(updated)
             assert updated.version == "1.0.1"
 
         # Get version history
         for prompt in updated_prompts:
-            history = await file_manager.get_history(prompt.id)
+            history = file_manager.get_history(prompt.id)
             assert len(history) == 2
             assert history[-1].version == "1.0.0"  # oldest version
             assert history[0].version == "1.0.1"  # latest version
 
         # Delete 3 prompts
         for prompt in created_prompts[:3]:
-            await file_manager._registry.delete(prompt.id)
+            file_manager._registry.delete(prompt.id)
 
         # List remaining prompts
-        remaining = await file_manager.list_prompts()
+        remaining = file_manager.list_prompts()
         assert len(remaining) == 7
 
         # Verify deleted prompts are gone
         for prompt in created_prompts[:3]:
             with pytest.raises(PromptNotFoundError):
-                await file_manager.get_prompt(prompt.id)
+                file_manager.get_prompt(prompt.id)
 
-    @pytest.mark.asyncio
-    async def test_async_workflow_with_concurrent_creates(
+    
+    def test_async_workflow_with_concurrent_creates(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -118,7 +118,7 @@ class TestAsyncWorkflow:
 
         # Create concurrently
         start = time.perf_counter()
-        results = await asyncio.gather(
+        results = asyncio.gather(
             *[
                 file_manager.create_prompt(p, changelog=f"Concurrent {i}")
                 for i, p in enumerate(prompts_to_create)
@@ -133,11 +133,11 @@ class TestAsyncWorkflow:
             assert created.version == "1.0.0"
 
         # Verify all exist in storage
-        all_prompts = await file_manager.list_prompts()
+        all_prompts = file_manager.list_prompts()
         assert len(all_prompts) == 20
 
-    @pytest.mark.asyncio
-    async def test_async_workflow_with_concurrent_renders(
+    
+    def test_async_workflow_with_concurrent_renders(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -163,13 +163,13 @@ class TestAsyncWorkflow:
                 template=test_prompts[0].template,
                 metadata=test_prompts[0].metadata,
             )
-            created = await file_manager.create_prompt(prompt, changelog=f"Create {i}")
+            created = file_manager.create_prompt(prompt, changelog=f"Create {i}")
             created_ids.append(created.id)
 
         # Render all concurrently 10 times
         total_renders = 0
         for _ in range(10):
-            results = await asyncio.gather(
+            results = asyncio.gather(
                 *[
                     file_manager.render(prompt_id, sample_variables)
                     for prompt_id in created_ids
@@ -183,8 +183,8 @@ class TestAsyncWorkflow:
 
         assert total_renders == 100
 
-    @pytest.mark.asyncio
-    async def test_async_workflow_with_concurrent_updates(
+    
+    def test_async_workflow_with_concurrent_updates(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -208,19 +208,19 @@ class TestAsyncWorkflow:
                 template=test_prompts[0].template,
                 metadata=test_prompts[0].metadata,
             )
-            created = await file_manager.create_prompt(prompt, changelog=f"Create {i}")
+            created = file_manager.create_prompt(prompt, changelog=f"Create {i}")
             created_ids.append(created.id)
 
         # Helper to update a prompt
-        async def update_prompt_helper(prompt_id: str, i: int):
-            current_p = await file_manager.get_prompt(prompt_id)
+        def update_prompt_helper(prompt_id: str, i: int):
+            current_p = file_manager.get_prompt(prompt_id)
             updated_current_p = current_p.model_copy(update={
                 "template": current_p.template.model_copy(update={"content": f"Updated prompt {i}"})
             })
-            return await file_manager.update_prompt(updated_current_p, changelog=f"Update {i}")
+            return file_manager.update_prompt(updated_current_p, changelog=f"Update {i}")
 
         # Update all concurrently
-        results = await asyncio.gather(
+        results = asyncio.gather(
             *[update_prompt_helper(prompt_id, i) for i, prompt_id in enumerate(created_ids)]
         )
 
@@ -235,8 +235,8 @@ class TestAsyncWorkflow:
             assert updated.id not in ids_seen
             ids_seen.add(updated.id)
 
-    @pytest.mark.asyncio
-    async def test_async_workflow_streaming_results(
+    
+    def test_async_workflow_streaming_results(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -262,7 +262,7 @@ class TestAsyncWorkflow:
                 template=test_prompts[0].template,
                 metadata=test_prompts[0].metadata,
             )
-            created = await file_manager.create_prompt(prompt, changelog=f"Create {i}")
+            created = file_manager.create_prompt(prompt, changelog=f"Create {i}")
             prompt_ids.append(created.id)
 
         # Render with as_completed
@@ -274,7 +274,7 @@ class TestAsyncWorkflow:
         completed_count = 0
         results = []
         for coro in asyncio.as_completed(render_tasks):
-            result = await coro
+            result = coro
             assert isinstance(result, str)
             results.append(result)
             completed_count += 1
@@ -282,8 +282,8 @@ class TestAsyncWorkflow:
         assert completed_count == 50
         assert len(results) == 50
 
-    @pytest.mark.asyncio
-    async def test_async_workflow_error_propagation(
+    
+    def test_async_workflow_error_propagation(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -298,7 +298,7 @@ class TestAsyncWorkflow:
         """
         # Create one valid prompt
         valid_prompt = test_prompts[0]
-        await file_manager.create_prompt(valid_prompt, changelog="Valid")
+        file_manager.create_prompt(valid_prompt, changelog="Valid")
 
         # Attempt mixed valid and invalid operations
         tasks = [
@@ -308,7 +308,7 @@ class TestAsyncWorkflow:
         ]
 
         # Gather with return_exceptions=True
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        results = asyncio.gather(*tasks, return_exceptions=True)
 
         # First should succeed
         assert isinstance(results[0], Prompt)
@@ -318,8 +318,8 @@ class TestAsyncWorkflow:
         assert isinstance(results[1], PromptNotFoundError)
         assert isinstance(results[2], PromptNotFoundError)
 
-    @pytest.mark.asyncio
-    async def test_async_workflow_with_version_tracking(
+    
+    def test_async_workflow_with_version_tracking(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -334,26 +334,26 @@ class TestAsyncWorkflow:
         """
         # Create initial prompt
         prompt = test_prompts[0]
-        created = await file_manager.create_prompt(prompt, changelog="Initial")
+        created = file_manager.create_prompt(prompt, changelog="Initial")
         assert created.version == "1.0.0"
 
         # Update 5 times
         current = created
         for i in range(1, 6):
-            current_current = await file_manager.get_prompt(current.id)
+            current_current = file_manager.get_prompt(current.id)
             updated_current_current = current_current.model_copy(update={
                 "template": current_current.template.model_copy(update={"content": f"Async version {i}: {prompt.template.content}"})
             })
-            updated = await file_manager.update_prompt(updated_current_current, changelog=f"Async update to 1.0.{i}")
+            updated = file_manager.update_prompt(updated_current_current, changelog=f"Async update to 1.0.{i}")
             assert updated.version == f"1.0.{i}"
             current = updated
 
         # Get complete history
-        history = await file_manager.get_history(prompt.id)
+        history = file_manager.get_history(prompt.id)
         assert len(history) == 6
 
         # Compare versions
-        comparison = await file_manager.compare_versions(
+        comparison = file_manager.compare_versions(
             prompt.id,
             "1.0.0",
             "1.0.5"
@@ -361,8 +361,8 @@ class TestAsyncWorkflow:
         assert comparison["versions"]["from"] == "1.0.0"
         assert comparison["versions"]["to"] == "1.0.5"
 
-    @pytest.mark.asyncio
-    async def test_async_workflow_rapid_operations(
+    
+    def test_async_workflow_rapid_operations(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -391,7 +391,7 @@ class TestAsyncWorkflow:
 
         # Rapid concurrent create
         start = time.perf_counter()
-        created = await asyncio.gather(
+        created = asyncio.gather(
             *[
                 file_manager.create_prompt(p, changelog=f"Rapid {i}")
                 for i, p in enumerate(prompts_to_create)
@@ -404,7 +404,7 @@ class TestAsyncWorkflow:
 
         # Rapid concurrent render
         start = time.perf_counter()
-        rendered = await asyncio.gather(
+        rendered = asyncio.gather(
             *[
                 file_manager.render(p.id, sample_variables)
                 for p in created
@@ -414,8 +414,8 @@ class TestAsyncWorkflow:
         assert len(rendered) == 100
         assert render_time < 5.0
 
-    @pytest.mark.asyncio
-    async def test_async_workflow_large_prompts(
+    
+    def test_async_workflow_large_prompts(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -433,18 +433,18 @@ class TestAsyncWorkflow:
         assert len(large_prompt.template.content) > 8000
 
         # Create large prompt
-        created = await file_manager.create_prompt(large_prompt, changelog="Large")
+        created = file_manager.create_prompt(large_prompt, changelog="Large")
         assert created.id == large_prompt.id
 
         # Render with large variable
         start = time.perf_counter()
-        result = await file_manager.render(large_prompt.id, {"name": "B" * 1000})
+        result = file_manager.render(large_prompt.id, {"name": "B" * 1000})
         render_time = time.perf_counter() - start
         assert len(result) > 50000
         assert render_time < 3.0  # Large template + large variable = reasonable timeout
 
-    @pytest.mark.asyncio
-    async def test_async_workflow_complex_templates(
+    
+    def test_async_workflow_complex_templates(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -461,8 +461,8 @@ class TestAsyncWorkflow:
         complex_prompt = test_prompts[-2]
 
         # Create and render
-        created = await file_manager.create_prompt(complex_prompt, changelog="Complex")
-        result = await file_manager.render(created.id, sample_variables)
+        created = file_manager.create_prompt(complex_prompt, changelog="Complex")
+        result = file_manager.render(created.id, sample_variables)
 
         # Verify output
         assert "Test Header" in result
@@ -470,8 +470,8 @@ class TestAsyncWorkflow:
         assert "Details:" in result
         assert all(item in result for item in ["Item 1", "Item 2", "Item 3"])
 
-    @pytest.mark.asyncio
-    async def test_async_workflow_persistence_across_instances(
+    
+    def test_async_workflow_persistence_across_instances(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -487,7 +487,7 @@ class TestAsyncWorkflow:
         """
         # Create prompts with first manager
         for prompt in test_prompts[:5]:
-            await file_manager.create_prompt(prompt, changelog="Initial")
+            file_manager.create_prompt(prompt, changelog="Initial")
 
         # Create new manager
         new_manager = PromptManager(
@@ -496,11 +496,11 @@ class TestAsyncWorkflow:
         )
 
         # Verify prompts exist
-        prompts = await new_manager.list_prompts()
+        prompts = new_manager.list_prompts()
         assert len(prompts) == 5
 
-    @pytest.mark.asyncio
-    async def test_async_workflow_with_metadata_search(
+    
+    def test_async_workflow_with_metadata_search(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -514,14 +514,14 @@ class TestAsyncWorkflow:
         """
         # Create test prompts
         for prompt in test_prompts[:8]:
-            await file_manager.create_prompt(prompt, changelog="Initial")
+            file_manager.create_prompt(prompt, changelog="Initial")
 
         # Search by tag
-        integration_prompts = await file_manager.list_prompts(tags=["integration"])
+        integration_prompts = file_manager.list_prompts(tags=["integration"])
         assert len(integration_prompts) >= 8
 
         # Search by format
-        text_prompts = await file_manager.list_prompts(format=PromptFormat.TEXT)
-        chat_prompts = await file_manager.list_prompts(format=PromptFormat.CHAT)
+        text_prompts = file_manager.list_prompts(format=PromptFormat.TEXT)
+        chat_prompts = file_manager.list_prompts(format=PromptFormat.CHAT)
         assert len(text_prompts) == 5
         assert len(chat_prompts) == 3

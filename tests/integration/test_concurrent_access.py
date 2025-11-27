@@ -90,8 +90,8 @@ def test_rapid_sync_calls_no_corruption(file_manager: PromptManager):
             pass
 
 
-@pytest.mark.asyncio
-async def test_rapid_async_calls_no_corruption(file_manager: PromptManager):
+
+def test_rapid_async_calls_no_corruption(file_manager: PromptManager):
     """Test 100+ rapid async calls without corruption."""
     # Create a base prompt
     base_prompt = Prompt(
@@ -102,7 +102,7 @@ async def test_rapid_async_calls_no_corruption(file_manager: PromptManager):
         template=PromptTemplate(content="Base {{name}}", variables=["name"]),
         metadata=PromptMetadata(author="Test", description="Base prompt"),
     )
-    await file_manager.create_prompt(base_prompt)
+    file_manager.create_prompt(base_prompt)
 
     # Perform 100+ rapid async operations
     iteration_count = 120
@@ -120,35 +120,35 @@ async def test_rapid_async_calls_no_corruption(file_manager: PromptManager):
                 template=PromptTemplate(content=f"Rapid {i}", variables=[]),
                 metadata=PromptMetadata(author="Test", description=f"Rapid {i}"),
             )
-            created = await file_manager.create_prompt(prompt)
+            created = file_manager.create_prompt(prompt)
             results.append(("create", created.id))
         elif i % 4 == 1:
             # Get prompt
-            retrieved = await file_manager.get_prompt("rapid_async_base")
+            retrieved = file_manager.get_prompt("rapid_async_base")
             results.append(("get", retrieved.id))
         elif i % 4 == 2:
             # List prompts
-            prompts = await file_manager.list_prompts()
+            prompts = file_manager.list_prompts()
             results.append(("list", len(prompts)))
         else:
             # Render prompt
-            rendered = await file_manager.render("rapid_async_base", {"name": f"User{i}"})
+            rendered = file_manager.render("rapid_async_base", {"name": f"User{i}"})
             results.append(("render", rendered))
 
     # Verify all operations completed
     assert len(results) == iteration_count
 
     # Verify no corruption
-    prompts = await file_manager.list_prompts()
+    prompts = file_manager.list_prompts()
     rapid_async_ids = [p.id for p in prompts if p.id.startswith("rapid_async_")]
     expected_created = iteration_count // 4
     assert len(rapid_async_ids) == expected_created + 1  # +1 for base
 
     # Clean up
-    await file_manager._registry.delete("rapid_async_base")
+    file_manager._registry.delete("rapid_async_base")
     for i in range(0, iteration_count, 4):
         try:
-            await file_manager._registry.delete(f"rapid_async_{i}")
+            file_manager._registry.delete(f"rapid_async_{i}")
         except:
             pass
 
@@ -231,8 +231,8 @@ def test_sync_calls_from_multiple_threads(file_manager: PromptManager):
                 pass
 
 
-@pytest.mark.asyncio
-async def test_async_calls_with_gather(file_manager: PromptManager):
+
+def test_async_calls_with_gather(file_manager: PromptManager):
     """Test async calls with asyncio.gather() (50+ concurrent operations)."""
     num_operations = 60
 
@@ -250,7 +250,7 @@ async def test_async_calls_with_gather(file_manager: PromptManager):
         create_tasks.append(file_manager.create_prompt(prompt))
 
     # Execute all creates concurrently
-    created_prompts = await asyncio.gather(*create_tasks, return_exceptions=True)
+    created_prompts = asyncio.gather(*create_tasks, return_exceptions=True)
 
     # Verify all succeeded
     successful_creates = [p for p in created_prompts if isinstance(p, Prompt)]
@@ -263,7 +263,7 @@ async def test_async_calls_with_gather(file_manager: PromptManager):
 
     # Concurrent get operations
     get_tasks = [file_manager.get_prompt(f"gather_prompt_{i}") for i in range(num_operations)]
-    retrieved_prompts = await asyncio.gather(*get_tasks, return_exceptions=True)
+    retrieved_prompts = asyncio.gather(*get_tasks, return_exceptions=True)
 
     # Verify all gets succeeded
     successful_gets = [p for p in retrieved_prompts if isinstance(p, Prompt)]
@@ -271,11 +271,11 @@ async def test_async_calls_with_gather(file_manager: PromptManager):
 
     # Clean up concurrently
     delete_tasks = [file_manager._registry.delete(f"gather_prompt_{i}") for i in range(num_operations)]
-    await asyncio.gather(*delete_tasks, return_exceptions=True)
+    asyncio.gather(*delete_tasks, return_exceptions=True)
 
 
-@pytest.mark.asyncio
-async def test_concurrent_render_operations(file_manager: PromptManager):
+
+def test_concurrent_render_operations(file_manager: PromptManager):
     """Test concurrent render operations with asyncio.gather()."""
     # Create a prompt for rendering
     prompt = Prompt(
@@ -286,7 +286,7 @@ async def test_concurrent_render_operations(file_manager: PromptManager):
         template=PromptTemplate(content="Hello {{name}}, ID: {{id}}", variables=["name", "id"]),
         metadata=PromptMetadata(author="Test", description="Concurrent render test"),
     )
-    await file_manager.create_prompt(prompt)
+    file_manager.create_prompt(prompt)
 
     # Create 50 concurrent render tasks
     num_renders = 50
@@ -296,7 +296,7 @@ async def test_concurrent_render_operations(file_manager: PromptManager):
     ]
 
     # Execute all renders concurrently
-    rendered_results = await asyncio.gather(*render_tasks, return_exceptions=True)
+    rendered_results = asyncio.gather(*render_tasks, return_exceptions=True)
 
     # Verify all renders succeeded
     assert len(rendered_results) == num_renders
@@ -308,11 +308,11 @@ async def test_concurrent_render_operations(file_manager: PromptManager):
         assert f"ID: {i}" in result
 
     # Clean up
-    await file_manager._registry.delete("concurrent_render")
+    file_manager._registry.delete("concurrent_render")
 
 
-@pytest.mark.asyncio
-async def test_concurrent_mixed_operations(file_manager: PromptManager):
+
+def test_concurrent_mixed_operations(file_manager: PromptManager):
     """Test mix of create, get, update, and list operations concurrently."""
     # Create base prompts first
     base_count = 10
@@ -326,7 +326,7 @@ async def test_concurrent_mixed_operations(file_manager: PromptManager):
             template=PromptTemplate(content=f"Base {i}", variables=[]),
             metadata=PromptMetadata(author="Test", description=f"Base {i}"),
         )
-        base_prompts.append(await file_manager.create_prompt(prompt))
+        base_prompts.append(file_manager.create_prompt(prompt))
 
     # Mix of operations
     mixed_tasks = []
@@ -356,7 +356,7 @@ async def test_concurrent_mixed_operations(file_manager: PromptManager):
         mixed_tasks.append(file_manager.render(f"mixed_base_{i}", {}))
 
     # Execute all concurrently
-    results = await asyncio.gather(*mixed_tasks, return_exceptions=True)
+    results = asyncio.gather(*mixed_tasks, return_exceptions=True)
 
     # Verify no exceptions (or at least most succeeded)
     exceptions = [r for r in results if isinstance(r, Exception)]
@@ -368,7 +368,7 @@ async def test_concurrent_mixed_operations(file_manager: PromptManager):
         cleanup_tasks.append(file_manager._registry.delete(f"mixed_base_{i}"))
     for i in range(10):
         cleanup_tasks.append(file_manager._registry.delete(f"mixed_create_{i}"))
-    await asyncio.gather(*cleanup_tasks, return_exceptions=True)
+    asyncio.gather(*cleanup_tasks, return_exceptions=True)
 
 
 def test_no_race_conditions_in_storage_access(file_manager: PromptManager):
@@ -400,8 +400,8 @@ def test_no_race_conditions_in_storage_access(file_manager: PromptManager):
     file_manager._registry.delete("race_condition_test")
 
 
-@pytest.mark.asyncio
-async def test_no_event_loop_corruption_with_gather(file_manager: PromptManager):
+
+def test_no_event_loop_corruption_with_gather(file_manager: PromptManager):
     """Verify asyncio.gather() doesn't corrupt event loop."""
     # Create multiple prompts concurrently
     create_tasks = []
@@ -417,24 +417,24 @@ async def test_no_event_loop_corruption_with_gather(file_manager: PromptManager)
         create_tasks.append(file_manager.create_prompt(prompt))
 
     # Execute
-    await asyncio.gather(*create_tasks)
+    asyncio.gather(*create_tasks)
 
     # Verify event loop is still functional
     loop = asyncio.get_running_loop()
     assert loop.is_running()
 
     # Verify we can still do operations
-    prompts = await file_manager.list_prompts()
+    prompts = file_manager.list_prompts()
     loop_test_ids = [p.id for p in prompts if p.id.startswith("loop_test_")]
     assert len(loop_test_ids) == 30
 
     # Clean up
     cleanup_tasks = [file_manager._registry.delete(f"loop_test_{i}") for i in range(30)]
-    await asyncio.gather(*cleanup_tasks, return_exceptions=True)
+    asyncio.gather(*cleanup_tasks, return_exceptions=True)
 
 
-@pytest.mark.asyncio
-async def test_stress_concurrent_operations(file_manager: PromptManager):
+
+def test_stress_concurrent_operations(file_manager: PromptManager):
     """Stress test with many concurrent operations."""
     # Create 100 prompts concurrently
     num_prompts = 100
@@ -452,15 +452,15 @@ async def test_stress_concurrent_operations(file_manager: PromptManager):
         create_tasks.append(file_manager.create_prompt(prompt))
 
     # Create all
-    created = await asyncio.gather(*create_tasks, return_exceptions=True)
+    created = asyncio.gather(*create_tasks, return_exceptions=True)
     successful_creates = [p for p in created if isinstance(p, Prompt)]
     assert len(successful_creates) >= num_prompts * 0.95  # Allow 5% failure rate for stress test
 
     # Verify with list
-    prompts = await file_manager.list_prompts()
+    prompts = file_manager.list_prompts()
     stress_ids = [p.id for p in prompts if p.id.startswith("stress_")]
     assert len(stress_ids) >= num_prompts * 0.95
 
     # Clean up
     cleanup_tasks = [file_manager._registry.delete(f"stress_{i}") for i in range(num_prompts)]
-    await asyncio.gather(*cleanup_tasks, return_exceptions=True)
+    asyncio.gather(*cleanup_tasks, return_exceptions=True)

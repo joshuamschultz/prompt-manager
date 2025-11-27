@@ -77,16 +77,16 @@ prompt = manager.create_prompt({
     "version": "1.0.0",
     "format": "text",
     "template": {
-        "content": "Hello {{name}}! Welcome to {{service}}."
+        "content": "Hello {{name}}! Welcome to {{role}}."
     }
 })
 
 # Render - no await
 result = manager.render("greeting", {
     "name": "Alice",
-    "service": "Prompt Manager"
+    "role": "Developer"
 })
-print(result)  # "Hello Alice! Welcome to Prompt Manager."
+print(result)  # "Hello Alice! Welcome to Developer."
 
 # List all prompts - no await
 prompts = manager.list_prompts()
@@ -109,14 +109,14 @@ prompt = await manager.create_prompt({
     "version": "1.0.0",
     "format": "text",
     "template": {
-        "content": "Hello {{name}}! Welcome to {{service}}."
+        "content": "Hello {{name}}! Welcome to {{role}}."
     }
 })
 
 # Render - with await
 result = await manager.render("greeting", {
     "name": "Alice",
-    "service": "Prompt Manager"
+    "role": "Developer"
 })
 
 # List all prompts - with await
@@ -236,35 +236,27 @@ The fastest way to get started - load a YAML prompt and use it with any LLM.
 
 ```python
 from prompt_manager import PromptManager
-from prompt_manager.storage import YAMLLoader, InMemoryStorage
-from prompt_manager.core.registry import PromptRegistry
 from pathlib import Path
 
-# 1. Setup (one-time)
-storage = InMemoryStorage()
-registry = PromptRegistry(storage=storage)
-manager = PromptManager(registry=registry)
+# 1. Create manager with auto-loading from prompts directory
+manager = PromptManager.create(prompt_dir=Path("prompts/"))
 
-# 2. Load prompts from YAML
-loader = YAMLLoader(registry)
-await loader.import_directory_to_registry(Path("prompts/"))
-
-# 3. Render and use with your LLM
-# ✨ NEW: Works with or without await!
+# 2. Render and use with your LLM
+# Works with or without await!
 
 # Async usage (in async functions):
 prompt_text = await manager.render("greeting", {
     "name": "Alice",
-    "service": "Prompt Manager"
+    "role": "Developer"
 })
 
 # Sync usage (in regular functions):
 prompt_text = manager.render("greeting", {
     "name": "Bob",
-    "service": "Prompt Manager"
+    "role": "Designer"
 })
 
-# 4. Validate output (optional)
+# 3. Validate output (optional)
 await manager.load_schemas(Path("schemas/"))
 
 # Both sync and async work:
@@ -282,10 +274,10 @@ prompts:
     format: text
     status: active
     template:
-      content: "Hello {{name}}! Welcome to {{service}}."
+      content: "Hello {{name}}! Welcome to our platform. Your role is {{role}}."
       variables:
         - name
-        - service
+        - role
 ```
 
 ### Complete Setup with Storage and Registry
@@ -314,8 +306,8 @@ await loader.import_directory_to_registry(Path("prompts/"))
 await manager.load_schemas(Path("schemas/"))
 
 # Now use the same workflow as above
-result = await manager.render("greeting", {"name": "Alice", "service": "API"})
-print(result)  # "Hello Alice! Welcome to API."
+result = await manager.render("greeting", {"name": "Alice", "role": "Developer"})
+print(result)  # "Hello Alice! Welcome to our platform. Your role is Developer."
 ```
 
 ### Creating Prompts Programmatically
@@ -334,8 +326,8 @@ prompt = Prompt(
     format=PromptFormat.TEXT,
     status=PromptStatus.ACTIVE,
     template=PromptTemplate(
-        content="Hello {{name}}! Welcome to {{service}}.",
-        variables=["name", "service"],
+        content="Hello {{name}}! Welcome to {{role}}.",
+        variables=["name", "role"],
     ),
     metadata=PromptMetadata(
         author="System",
@@ -348,9 +340,9 @@ prompt = Prompt(
 await manager.create_prompt(prompt)
 result = await manager.render("greeting", {
     "name": "Alice",
-    "service": "Prompt Manager"
+    "role": "Developer"
 })
-print(result)  # "Hello Alice! Welcome to Prompt Manager."
+print(result)  # "Hello Alice! Welcome to Developer."
 ```
 
 **Chat Prompt:**
@@ -429,6 +421,48 @@ await manager.register_schema(user_schema)
 prompt.input_schema = "user_input"
 ```
 
+## Handlebars Template Syntax
+
+Prompt Manager uses **Handlebars** (via pybars4) for templating, NOT Jinja2.
+
+### Basic Variables
+
+```handlebars
+Hello {{name}}! Your role is {{role}}.
+```
+
+### Conditionals
+
+```handlebars
+{{#if premium}}
+  Welcome to premium features!
+{{else}}
+  Upgrade to access premium features.
+{{/if}}
+```
+
+### Loops
+
+```handlebars
+{{#each datasets}}
+  - {{name}}: {{rows}} rows
+{{/each}}
+```
+
+### Important Differences from Jinja2
+
+**Handlebars does NOT support:**
+- Filters like `| title`, `| upper`, `| join`
+- Python expressions like `{% for item in items %}`
+- Built-in functions in templates
+
+**Use Handlebars syntax:**
+- Loops: `{{#each items}}...{{/each}}` (not `{% for %}`)
+- Conditionals: `{{#if condition}}...{{/if}}` (not `{% if %}`)
+- Variables: `{{variable}}` (same as Jinja2)
+
+For advanced template features, use partials and helpers (see documentation).
+
 ## Advanced Features
 
 ### YAML File Organization
@@ -460,10 +494,10 @@ prompts:
     format: text
     status: active
     template:
-      content: "Hello {{name}}! Welcome to {{service}}."
+      content: "Hello {{name}}! Welcome to our platform. Your role is {{role}}."
       variables:
         - name
-        - service
+        - role
     metadata:
       author: System
       description: "Simple greeting prompt"
@@ -934,4 +968,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
   - [ ] CLI tool for prompt management
   - [ ] REST API server
   - [ ] Performance optimizations (lazy loading, caching improvements)
-  - [ ] Advanced templating features (conditionals, loops, filters)
+  - [ ] Advanced templating features (conditionals, loops via helpers)

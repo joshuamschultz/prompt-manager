@@ -24,30 +24,25 @@ chat_template:
     function_call: null
     tool_calls: null
   - role: user
-    content: 'Analyze this {{data_type}} data:
+    content: 'Perform {{analysis_type}} analysis on the following datasets:
 
 
-      {{data}}
+      {{#each datasets}}
+
+      - {{name}}: {{rows}} rows
+
+      {{/each}}
 
 
-      Analysis goals: {{goals}}
-
-
-      {{#if context}}
-
-      Additional context: {{context}}
-
-      {{/if}}
+      Provide insights, trends, and recommendations.
 
       '
     name: null
     function_call: null
     tool_calls: null
   variables:
-  - data_type
-  - data
-  - goals
-  - context
+  - datasets
+  - analysis_type
 status: active
 created_at: '2025-11-26T22:42:52.452441'
 updated_at: '2025-11-26T22:42:52.452442'

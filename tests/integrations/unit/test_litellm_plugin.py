@@ -305,13 +305,15 @@ class TestLiteLLMPlugin:
         plugin = LiteLLMPlugin()
 
         # Mock TemplateEngine to raise exception
-        with patch(
-            "prompt_manager.plugins.litellm_plugin.TemplateEngine",
-            side_effect=Exception("Template engine failed"),
+        with (
+            patch(
+                "prompt_manager.plugins.litellm_plugin.TemplateEngine",
+                side_effect=Exception("Template engine failed"),
+            ),
+            pytest.raises(PluginError, match="Failed to initialize LiteLLM"),
         ):
-            # Act & Assert
-            with pytest.raises(PluginError, match="Failed to initialize LiteLLM"):
-                plugin.initialize({})
+            # Act
+            plugin.initialize({})
 
     def test_render_with_null_integration_raises_error(
         self, plugin: LiteLLMPlugin, text_prompt: Prompt

@@ -21,8 +21,8 @@ from prompt_manager.exceptions import PromptNotFoundError
 class TestAsyncUserScenarios:
     """Test real-world asynchronous usage patterns."""
 
-    @pytest.mark.asyncio
-    async def test_fastapi_integration_simulation(
+    
+    def test_fastapi_integration_simulation(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -40,39 +40,39 @@ class TestAsyncUserScenarios:
         # This test runs in pytest-asyncio which creates event loop
         # Simulates FastAPI handler
 
-        async def fastapi_handler_create():
+        def fastapi_handler_create():
             """Simulate POST /prompts endpoint."""
             prompt = test_prompts[0]
-            created = await file_manager.create_prompt(prompt, changelog="API create")
+            created = file_manager.create_prompt(prompt, changelog="API create")
             return created
 
-        async def fastapi_handler_get(prompt_id: str):
+        def fastapi_handler_get(prompt_id: str):
             """Simulate GET /prompts/{id} endpoint."""
-            return await file_manager.get_prompt(prompt_id)
+            return file_manager.get_prompt(prompt_id)
 
-        async def fastapi_handler_render(prompt_id: str, variables: dict):
+        def fastapi_handler_render(prompt_id: str, variables: dict):
             """Simulate POST /prompts/{id}/render endpoint."""
-            return await file_manager.render(prompt_id, variables)
+            return file_manager.render(prompt_id, variables)
 
-        async def fastapi_handler_list():
+        def fastapi_handler_list():
             """Simulate GET /prompts endpoint."""
-            return await file_manager.list_prompts()
+            return file_manager.list_prompts()
 
         # Simulate request flow
-        created = await fastapi_handler_create()
+        created = fastapi_handler_create()
         assert created.id == test_prompts[0].id
 
-        retrieved = await fastapi_handler_get(created.id)
+        retrieved = fastapi_handler_get(created.id)
         assert retrieved.id == created.id
 
-        result = await fastapi_handler_render(created.id, sample_variables)
+        result = fastapi_handler_render(created.id, sample_variables)
         assert isinstance(result, str)
 
-        prompts = await fastapi_handler_list()
+        prompts = fastapi_handler_list()
         assert len(prompts) == 1
 
-    @pytest.mark.asyncio
-    async def test_aiohttp_integration_simulation(
+    
+    def test_aiohttp_integration_simulation(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -87,37 +87,37 @@ class TestAsyncUserScenarios:
         - Verify no conflicts with aiohttp's loop
         """
         # Simulate aiohttp handler
-        async def aiohttp_handler(request_data: dict):
+        def aiohttp_handler(request_data: dict):
             """Simulate aiohttp request handler."""
             action = request_data["action"]
 
             if action == "create":
                 prompt = test_prompts[0]
-                return await file_manager.create_prompt(prompt, changelog="aiohttp create")
+                return file_manager.create_prompt(prompt, changelog="aiohttp create")
             elif action == "render":
-                return await file_manager.render(
+                return file_manager.render(
                     request_data["prompt_id"],
                     request_data["variables"]
                 )
             elif action == "list":
-                return await file_manager.list_prompts()
+                return file_manager.list_prompts()
 
         # Simulate multiple requests
-        created = await aiohttp_handler({"action": "create"})
+        created = aiohttp_handler({"action": "create"})
         assert created.id == test_prompts[0].id
 
-        result = await aiohttp_handler({
+        result = aiohttp_handler({
             "action": "render",
             "prompt_id": created.id,
             "variables": sample_variables
         })
         assert isinstance(result, str)
 
-        prompts = await aiohttp_handler({"action": "list"})
+        prompts = aiohttp_handler({"action": "list"})
         assert len(prompts) == 1
 
-    @pytest.mark.asyncio
-    async def test_concurrent_operations_with_gather(
+    
+    def test_concurrent_operations_with_gather(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -147,7 +147,7 @@ class TestAsyncUserScenarios:
 
         # 50 concurrent creates
         start = time.perf_counter()
-        created = await asyncio.gather(
+        created = asyncio.gather(
             *[
                 file_manager.create_prompt(p, changelog=f"Create {i}")
                 for i, p in enumerate(prompts_to_create)
@@ -159,7 +159,7 @@ class TestAsyncUserScenarios:
 
         # 50 concurrent renders
         start = time.perf_counter()
-        rendered = await asyncio.gather(
+        rendered = asyncio.gather(
             *[
                 file_manager.render(p.id, sample_variables)
                 for p in created
@@ -172,15 +172,15 @@ class TestAsyncUserScenarios:
 
         # 50 concurrent updates
         # Helper to update a prompt
-        async def update_prompt_helper(prompt: Prompt, i: int):
-            current_p = await file_manager.get_prompt(prompt.id)
+        def update_prompt_helper(prompt: Prompt, i: int):
+            current_p = file_manager.get_prompt(prompt.id)
             updated_current_p = current_p.model_copy(update={
                 "template": current_p.template.model_copy(update={"content": f"Updated {i}"})
             })
-            return await file_manager.update_prompt(updated_current_p, changelog=f"Update {i}")
+            return file_manager.update_prompt(updated_current_p, changelog=f"Update {i}")
 
         start = time.perf_counter()
-        updated = await asyncio.gather(
+        updated = asyncio.gather(
             *[update_prompt_helper(p, i) for i, p in enumerate(created)]
         )
         update_time = time.perf_counter() - start
@@ -189,11 +189,11 @@ class TestAsyncUserScenarios:
         print(f"50 concurrent updates: {update_time:.2f}s")
 
         # Verify all operations successful
-        all_prompts = await file_manager.list_prompts()
+        all_prompts = file_manager.list_prompts()
         assert len(all_prompts) == 50
 
-    @pytest.mark.asyncio
-    async def test_streaming_with_as_completed(
+    
+    def test_streaming_with_as_completed(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -222,7 +222,7 @@ class TestAsyncUserScenarios:
             )
             prompts_to_create.append(prompt)
 
-        created = await asyncio.gather(
+        created = asyncio.gather(
             *[
                 file_manager.create_prompt(p, changelog=f"Create {i}")
                 for i, p in enumerate(prompts_to_create)
@@ -239,7 +239,7 @@ class TestAsyncUserScenarios:
         results = []
         start = time.perf_counter()
         for coro in asyncio.as_completed(render_tasks):
-            result = await coro
+            result = coro
             assert isinstance(result, str)
             results.append(result)
 
@@ -248,8 +248,8 @@ class TestAsyncUserScenarios:
 
         assert len(results) == 100
 
-    @pytest.mark.asyncio
-    async def test_async_error_handling(
+    
+    def test_async_error_handling(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -265,30 +265,30 @@ class TestAsyncUserScenarios:
         """
         # Create a prompt
         prompt = test_prompts[0]
-        created = await file_manager.create_prompt(prompt, changelog="Initial")
+        created = file_manager.create_prompt(prompt, changelog="Initial")
 
         # Trigger PromptNotFoundError
         with pytest.raises(PromptNotFoundError) as exc_info:
-            await file_manager.get_prompt("nonexistent_prompt")
+            file_manager.get_prompt("nonexistent_prompt")
 
         # Verify error message
         assert "nonexistent_prompt" in str(exc_info.value)
 
         # Verify manager still works after error
-        retrieved = await file_manager.get_prompt(created.id)
+        retrieved = file_manager.get_prompt(created.id)
         assert retrieved.id == created.id
 
         # Multiple errors don't corrupt state
         for i in range(5):
             with pytest.raises(PromptNotFoundError):
-                await file_manager.get_prompt(f"nonexistent_{i}")
+                file_manager.get_prompt(f"nonexistent_{i}")
 
         # Manager still functional
-        another = await file_manager.create_prompt(test_prompts[1], changelog="After errors")
+        another = file_manager.create_prompt(test_prompts[1], changelog="After errors")
         assert another.id == test_prompts[1].id
 
-    @pytest.mark.asyncio
-    async def test_async_batch_operations(
+    
+    def test_async_batch_operations(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -315,7 +315,7 @@ class TestAsyncUserScenarios:
             )
             prompts_to_create.append(prompt)
 
-        created = await asyncio.gather(
+        created = asyncio.gather(
             *[
                 file_manager.create_prompt(p, changelog=f"Batch {i}")
                 for i, p in enumerate(prompts_to_create)
@@ -324,31 +324,31 @@ class TestAsyncUserScenarios:
         assert len(created) == 100
 
         # Helper to update a prompt
-        async def update_prompt_helper(prompt: Prompt, i: int):
-            current_p = await file_manager.get_prompt(prompt.id)
+        def update_prompt_helper(prompt: Prompt, i: int):
+            current_p = file_manager.get_prompt(prompt.id)
             updated_current_p = current_p.model_copy(update={
                 "template": current_p.template.model_copy(update={"content": f"Batch update {i}"})
             })
-            return await file_manager.update_prompt(updated_current_p, changelog=f"Update {i}")
+            return file_manager.update_prompt(updated_current_p, changelog=f"Update {i}")
 
         # Batch update first 50 concurrently
-        updated = await asyncio.gather(
+        updated = asyncio.gather(
             *[update_prompt_helper(p, i) for i, p in enumerate(created[:50])]
         )
         assert len(updated) == 50
         assert all(u.version == "1.0.1" for u in updated)
 
         # Batch delete first 25 concurrently
-        await asyncio.gather(
-            *[await file_manager._registry.delete(p.id) for p in created[:25]]
+        asyncio.gather(
+            *[file_manager._registry.delete(p.id) for p in created[:25]]
         )
 
         # Verify counts
-        remaining = await file_manager.list_prompts()
+        remaining = file_manager.list_prompts()
         assert len(remaining) == 75
 
-    @pytest.mark.asyncio
-    async def test_async_search_operations(
+    
+    def test_async_search_operations(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -362,7 +362,7 @@ class TestAsyncUserScenarios:
         - Combine searches
         """
         # Create diverse prompts
-        await asyncio.gather(
+        asyncio.gather(
             *[
                 file_manager.create_prompt(p, changelog=f"Create {i}")
                 for i, p in enumerate(test_prompts[:10])
@@ -370,21 +370,21 @@ class TestAsyncUserScenarios:
         )
 
         # Search by tag
-        integration_prompts = await file_manager.list_prompts(tags=["integration"])
+        integration_prompts = file_manager.list_prompts(tags=["integration"])
         assert len(integration_prompts) >= 10
 
         # Search by format
-        text_prompts = await file_manager.list_prompts(format=PromptFormat.TEXT)
-        chat_prompts = await file_manager.list_prompts(format=PromptFormat.CHAT)
+        text_prompts = file_manager.list_prompts(format=PromptFormat.TEXT)
+        chat_prompts = file_manager.list_prompts(format=PromptFormat.CHAT)
         assert len(text_prompts) >= 5
         assert len(chat_prompts) >= 3
 
         # Combined search
-        complex_prompts = await file_manager.list_prompts(tags=["integration", "complex"])
+        complex_prompts = file_manager.list_prompts(tags=["integration", "complex"])
         assert len(complex_prompts) >= 1
 
-    @pytest.mark.asyncio
-    async def test_async_version_operations(
+    
+    def test_async_version_operations(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -401,26 +401,26 @@ class TestAsyncUserScenarios:
         prompt = test_prompts[0]
 
         # Create and update multiple times
-        created = await file_manager.create_prompt(prompt, changelog="v1.0.0")
+        created = file_manager.create_prompt(prompt, changelog="v1.0.0")
         assert created.version == "1.0.0"
 
         # 10 updates
         current = created
         for i in range(1, 11):
-            current_current = await file_manager.get_prompt(current.id)
+            current_current = file_manager.get_prompt(current.id)
             updated_current_current = current_current.model_copy(update={
                 "template": current_current.template.model_copy(update={"content": f"Version {i}: {prompt.template.content}"})
             })
-            updated = await file_manager.update_prompt(updated_current_current, changelog=f"Update to v1.0.{i}")
+            updated = file_manager.update_prompt(updated_current_current, changelog=f"Update to v1.0.{i}")
             assert updated.version == f"1.0.{i}"
             current = updated
 
         # Get full history
-        history = await file_manager.get_history(prompt.id)
+        history = file_manager.get_history(prompt.id)
         assert len(history) == 11
 
         # Compare first and last
-        comparison = await file_manager.compare_versions(
+        comparison = file_manager.compare_versions(
             prompt.id,
             "1.0.0",
             "1.0.10"
@@ -428,8 +428,8 @@ class TestAsyncUserScenarios:
         assert comparison["versions"]["from"] == "1.0.0"
         assert comparison["versions"]["to"] == "1.0.10"
 
-    @pytest.mark.asyncio
-    async def test_async_large_prompt_operations(
+    
+    def test_async_large_prompt_operations(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -447,16 +447,16 @@ class TestAsyncUserScenarios:
         assert len(large_prompt.template.content) > 8000
 
         # Create large prompt
-        created = await file_manager.create_prompt(large_prompt, changelog="Large")
+        created = file_manager.create_prompt(large_prompt, changelog="Large")
         assert created.id == large_prompt.id
 
         # Render with large variable
         large_var = "C" * 10000
-        result = await file_manager.render(large_prompt.id, {"name": large_var})
+        result = file_manager.render(large_prompt.id, {"name": large_var})
         assert len(result) > 50000
 
         # Multiple concurrent renders of large prompt
-        results = await asyncio.gather(
+        results = asyncio.gather(
             *[
                 file_manager.render(large_prompt.id, {"name": f"D{i}" * 1000})
                 for i in range(10)
@@ -465,8 +465,8 @@ class TestAsyncUserScenarios:
         assert len(results) == 10
         assert all(len(r) > 50000 for r in results)
 
-    @pytest.mark.asyncio
-    async def test_async_mixed_operation_patterns(
+    
+    def test_async_mixed_operation_patterns(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -494,38 +494,38 @@ class TestAsyncUserScenarios:
             )
             prompts_batch1.append(prompt)
 
-        created1 = await asyncio.gather(
+        created1 = asyncio.gather(
             *[file_manager.create_prompt(p, changelog=f"P1 {i}") for i, p in enumerate(prompts_batch1)]
         )
 
-        rendered1 = await asyncio.gather(
+        rendered1 = asyncio.gather(
             *[file_manager.render(p.id, sample_variables) for p in created1]
         )
         assert len(rendered1) == 20
 
         # Helper to update a prompt
-        async def update_prompt_helper2(prompt: Prompt, i: int):
-            current_p = await file_manager.get_prompt(prompt.id)
+        def update_prompt_helper2(prompt: Prompt, i: int):
+            current_p = file_manager.get_prompt(prompt.id)
             updated_current_p = current_p.model_copy(update={
                 "template": current_p.template.model_copy(update={"content": f"Updated {i}"})
             })
-            return await file_manager.update_prompt(updated_current_p, changelog=f"Update {i}")
+            return file_manager.update_prompt(updated_current_p, changelog=f"Update {i}")
 
         # Pattern 2: Update some, delete others
-        await asyncio.gather(
+        asyncio.gather(
             *[update_prompt_helper2(p, i) for i, p in enumerate(created1[:10])]
         )
 
-        await asyncio.gather(
-            *[await file_manager._registry.delete(p.id) for p in created1[10:15]]
+        asyncio.gather(
+            *[file_manager._registry.delete(p.id) for p in created1[10:15]]
         )
 
         # Verify state
-        remaining = await file_manager.list_prompts()
+        remaining = file_manager.list_prompts()
         assert len(remaining) == 15
 
-    @pytest.mark.asyncio
-    async def test_async_real_world_api_simulation(
+    
+    def test_async_real_world_api_simulation(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -540,7 +540,7 @@ class TestAsyncUserScenarios:
         - Verify all succeed
         - No conflicts
         """
-        async def api_request_1():
+        def api_request_1():
             """Simulate user 1 creating and rendering."""
             prompt = Prompt(
                 id="user1_prompt",
@@ -550,11 +550,11 @@ class TestAsyncUserScenarios:
                 template=test_prompts[0].template,
                 metadata=test_prompts[0].metadata,
             )
-            created = await file_manager.create_prompt(prompt, changelog="User 1 create")
-            result = await file_manager.render(created.id, sample_variables)
+            created = file_manager.create_prompt(prompt, changelog="User 1 create")
+            result = file_manager.render(created.id, sample_variables)
             return created, result
 
-        async def api_request_2():
+        def api_request_2():
             """Simulate user 2 creating and updating."""
             prompt = Prompt(
                 id="user2_prompt",
@@ -564,22 +564,22 @@ class TestAsyncUserScenarios:
                 template=test_prompts[1].template,
                 metadata=test_prompts[1].metadata,
             )
-            created = await file_manager.create_prompt(prompt, changelog="User 2 create")
-            current_created = await file_manager.get_prompt(created.id)
+            created = file_manager.create_prompt(prompt, changelog="User 2 create")
+            current_created = file_manager.get_prompt(created.id)
             updated_current_created = current_created.model_copy(update={
                 "template": current_created.template.model_copy(update={"content": f"User 2 update"})
             })
-            updated = await file_manager.update_prompt(updated_current_created, changelog="Update")
+            updated = file_manager.update_prompt(updated_current_created, changelog="Update")
             return created, updated
 
-        async def api_request_3():
+        def api_request_3():
             """Simulate user 3 listing and searching."""
-            prompts = await file_manager.list_prompts()
-            search_results = await file_manager.list_prompts(tags=["integration"])
+            prompts = file_manager.list_prompts()
+            search_results = file_manager.list_prompts(tags=["integration"])
             return prompts, search_results
 
         # Execute all API requests concurrently
-        results = await asyncio.gather(
+        results = asyncio.gather(
             api_request_1(),
             api_request_2(),
             api_request_3(),

@@ -14,8 +14,8 @@ from prompt_manager.exceptions import PromptNotFoundError
 class TestDualModeWorkflow:
     """Test interleaved sync and async operations maintain consistency."""
 
-    @pytest.mark.asyncio
-    async def test_interleaved_sync_async_operations(
+    
+    def test_interleaved_sync_async_operations(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -43,7 +43,7 @@ class TestDualModeWorkflow:
         assert created_a.version == "1.0.0"
 
         # Async create B
-        created_b = await file_manager.create_prompt(prompt_b, changelog="Async create B")
+        created_b = file_manager.create_prompt(prompt_b, changelog="Async create B")
         assert created_b.id == prompt_b.id
         assert created_b.version == "1.0.0"
 
@@ -53,7 +53,7 @@ class TestDualModeWorkflow:
         assert len(result_a) > 0
 
         # Async render B
-        result_b = await file_manager.render(prompt_b.id, sample_variables)
+        result_b = file_manager.render(prompt_b.id, sample_variables)
         assert isinstance(result_b, str)
         assert len(result_b) > 0
 
@@ -66,22 +66,22 @@ class TestDualModeWorkflow:
         assert updated_a.version == "1.0.1"
 
         # Async update B
-        current_prompt_b = await file_manager.get_prompt(prompt_b.id)
+        current_prompt_b = file_manager.get_prompt(prompt_b.id)
         updated_current_prompt_b = current_prompt_b.model_copy(update={
             "template": current_prompt_b.template.model_copy(update={"content": f"Async updated content"})
         })
-        updated_b = await file_manager.update_prompt(updated_current_prompt_b, changelog="Async update")
+        updated_b = file_manager.update_prompt(updated_current_prompt_b, changelog="Async update")
         assert updated_b.version == "1.0.1"
 
         # Verify both prompts exist and have correct versions
         sync_retrieved_a = file_manager.get_prompt(prompt_a.id)
-        async_retrieved_b = await file_manager.get_prompt(prompt_b.id)
+        async_retrieved_b = file_manager.get_prompt(prompt_b.id)
 
         assert sync_retrieved_a.version == "1.0.1"
         assert async_retrieved_b.version == "1.0.1"
 
-    @pytest.mark.asyncio
-    async def test_sync_create_async_consume(
+    
+    def test_sync_create_async_consume(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -110,26 +110,26 @@ class TestDualModeWorkflow:
             file_manager.render(prompt_id, sample_variables)
             for prompt_id in created_ids[:5]  # Text prompts only
         ]
-        rendered = await asyncio.gather(*render_tasks)
+        rendered = asyncio.gather(*render_tasks)
         assert len(rendered) == 5
         assert all(isinstance(r, str) for r in rendered)
 
         # Helper to update a prompt
-        async def update_prompt_helper(prompt_id: str, i: int):
-            current_p = await file_manager.get_prompt(prompt_id)
+        def update_prompt_helper(prompt_id: str, i: int):
+            current_p = file_manager.get_prompt(prompt_id)
             updated_current_p = current_p.model_copy(update={
                 "template": current_p.template.model_copy(update={"content": f"Async updated {i}"})
             })
-            return await file_manager.update_prompt(updated_current_p, changelog=f"Async update {i}")
+            return file_manager.update_prompt(updated_current_p, changelog=f"Async update {i}")
 
         # Update all concurrently
         update_tasks = [update_prompt_helper(prompt_id, i) for i, prompt_id in enumerate(created_ids[:5])]
-        updated = await asyncio.gather(*update_tasks)
+        updated = asyncio.gather(*update_tasks)
         assert len(updated) == 5
         assert all(u.version == "1.0.1" for u in updated)
 
-    @pytest.mark.asyncio
-    async def test_async_create_sync_consume(
+    
+    def test_async_create_sync_consume(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -150,7 +150,7 @@ class TestDualModeWorkflow:
             file_manager.create_prompt(prompt, changelog=f"Async {i}")
             for i, prompt in enumerate(test_prompts[:10])
         ]
-        created = await asyncio.gather(*create_tasks)
+        created = asyncio.gather(*create_tasks)
         assert len(created) == 10
 
         # Sync consume
@@ -170,8 +170,8 @@ class TestDualModeWorkflow:
             updated = file_manager.update_prompt(updated_current_p, changelog=f"Sync update {i}")
             assert updated.version == "1.0.1"
 
-    @pytest.mark.asyncio
-    async def test_storage_consistency_across_modes(
+    
+    def test_storage_consistency_across_modes(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -191,16 +191,16 @@ class TestDualModeWorkflow:
         assert created.id == prompt.id
 
         # Verify exists in async mode
-        async_retrieved = await file_manager.get_prompt(prompt.id)
+        async_retrieved = file_manager.get_prompt(prompt.id)
         assert async_retrieved.id == created.id
         assert async_retrieved.version == "1.0.0"
 
         # Update in async mode
-        current_prompt = await file_manager.get_prompt(prompt.id)
+        current_prompt = file_manager.get_prompt(prompt.id)
         updated_current_prompt = current_prompt.model_copy(update={
             "template": current_prompt.template.model_copy(update={"content": f"Async updated"})
         })
-        updated = await file_manager.update_prompt(updated_current_prompt, changelog="Async update")
+        updated = file_manager.update_prompt(updated_current_prompt, changelog="Async update")
         assert updated.version == "1.0.1"
 
         # Verify update visible in sync mode
@@ -209,14 +209,14 @@ class TestDualModeWorkflow:
         assert "Async updated" in sync_retrieved.template.content
 
         # Delete in sync mode
-        await file_manager._registry.delete(prompt.id)
+        file_manager._registry.delete(prompt.id)
 
         # Verify deleted in async mode
         with pytest.raises(PromptNotFoundError):
-            await file_manager.get_prompt(prompt.id)
+            file_manager.get_prompt(prompt.id)
 
-    @pytest.mark.asyncio
-    async def test_version_history_consistency(
+    
+    def test_version_history_consistency(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -238,11 +238,11 @@ class TestDualModeWorkflow:
         assert created.version == "1.0.0"
 
         # Update in async (v1.0.1)
-        current_prompt = await file_manager.get_prompt(prompt.id)
+        current_prompt = file_manager.get_prompt(prompt.id)
         updated_current_prompt = current_prompt.model_copy(update={
             "template": current_prompt.template.model_copy(update={"content": f"Async v1.0.1"})
         })
-        updated1 = await file_manager.update_prompt(updated_current_prompt, changelog="Async update to v1.0.1")
+        updated1 = file_manager.update_prompt(updated_current_prompt, changelog="Async update to v1.0.1")
         assert updated1.version == "1.0.1"
 
         # Update in sync (v1.0.2)
@@ -254,7 +254,7 @@ class TestDualModeWorkflow:
         assert updated2.version == "1.0.2"
 
         # Get history in async mode
-        async_history = await file_manager.get_history(prompt.id)
+        async_history = file_manager.get_history(prompt.id)
         assert len(async_history) == 3
         assert [v.version for v in async_history] == ["1.0.0", "1.0.1", "1.0.2"]
 
@@ -268,8 +268,8 @@ class TestDualModeWorkflow:
             assert sync_v.version == async_v.version
             assert sync_v.id == async_v.id
 
-    @pytest.mark.asyncio
-    async def test_list_operations_consistency(
+    
+    def test_list_operations_consistency(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -287,14 +287,14 @@ class TestDualModeWorkflow:
             if i % 2 == 0:
                 file_manager.create_prompt(prompt, changelog=f"Sync {i}")
             else:
-                await file_manager.create_prompt(prompt, changelog=f"Async {i}")
+                file_manager.create_prompt(prompt, changelog=f"Async {i}")
 
         # List in sync mode
         sync_list = file_manager.list_prompts()
         assert len(sync_list) == 5
 
         # List in async mode
-        async_list = await file_manager.list_prompts()
+        async_list = file_manager.list_prompts()
         assert len(async_list) == 5
 
         # Verify lists contain same IDs
@@ -302,8 +302,8 @@ class TestDualModeWorkflow:
         async_ids = {p.id for p in async_list}
         assert sync_ids == async_ids
 
-    @pytest.mark.asyncio
-    async def test_search_operations_consistency(
+    
+    def test_search_operations_consistency(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -321,19 +321,19 @@ class TestDualModeWorkflow:
             if i % 2 == 0:
                 file_manager.create_prompt(prompt, changelog=f"Sync {i}")
             else:
-                await file_manager.create_prompt(prompt, changelog=f"Async {i}")
+                file_manager.create_prompt(prompt, changelog=f"Async {i}")
 
         # Search by tags in both modes
         sync_search = file_manager.list_prompts(tags=["integration"])
-        async_search = await file_manager.list_prompts(tags=["integration"])
+        async_search = file_manager.list_prompts(tags=["integration"])
 
         assert len(sync_search) == len(async_search)
         sync_ids = {p.id for p in sync_search}
         async_ids = {p.id for p in async_search}
         assert sync_ids == async_ids
 
-    @pytest.mark.asyncio
-    async def test_mixed_mode_error_handling(
+    
+    def test_mixed_mode_error_handling(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -353,14 +353,14 @@ class TestDualModeWorkflow:
             file_manager.get_prompt("nonexistent")
 
         with pytest.raises(PromptNotFoundError) as async_exc:
-            await file_manager.get_prompt("nonexistent")
+            file_manager.get_prompt("nonexistent")
 
         # Verify error messages are similar
         assert "nonexistent" in str(sync_exc.value)
         assert "nonexistent" in str(async_exc.value)
 
-    @pytest.mark.asyncio
-    async def test_comparison_operations_consistency(
+    
+    def test_comparison_operations_consistency(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -377,11 +377,11 @@ class TestDualModeWorkflow:
 
         # Create and update
         file_manager.create_prompt(prompt, changelog="v1.0.0")
-        current_prompt = await file_manager.get_prompt(prompt.id)
+        current_prompt = file_manager.get_prompt(prompt.id)
         updated_current_prompt = current_prompt.model_copy(update={
             "template": current_prompt.template.model_copy(update={"content": f"Updated"})
         })
-        await file_manager.update_prompt(updated_current_prompt, changelog="v1.0.1")
+        file_manager.update_prompt(updated_current_prompt, changelog="v1.0.1")
 
         # Compare in sync mode
         sync_comparison = file_manager.compare_versions(
@@ -391,7 +391,7 @@ class TestDualModeWorkflow:
         )
 
         # Compare in async mode
-        async_comparison = await file_manager.compare_versions(
+        async_comparison = file_manager.compare_versions(
             prompt.id,
             "1.0.0",
             "1.0.1"

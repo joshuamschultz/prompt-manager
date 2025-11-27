@@ -21,8 +21,8 @@ async conversion methods to transform prompts into framework-specific formats.
     manager = PromptManager(registry=registry)
     integration = OpenAIIntegration(template_engine=manager._engine)
 
-    prompt = await manager._registry.get("my_prompt")
-    openai_messages = await integration.convert(prompt, variables)
+    prompt = manager._registry.get("my_prompt")
+    openai_messages = integration.convert(prompt, variables)
 
 Lazy Loading
 ------------

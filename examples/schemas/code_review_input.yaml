@@ -45,10 +45,8 @@ schemas:
             error_message: "Code must be less than 10000 characters"
 
       - name: "focus_areas"
-        type: "string"
+        type: "list"
+        item_type: "string"
         required: false
-        default: "general code quality"
-        description: "Specific areas to focus on"
-        validators:
-          - type: "max_length"
-            max_value: 500
+        default: []
+        description: "Specific areas to focus on (e.g., security, performance, best_practices)"

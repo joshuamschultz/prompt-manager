@@ -354,7 +354,7 @@ class CustomValidator(BaseValidator):
 
         # Check return type
         if not isinstance(result, bool):
-            error = f"Validator function must return bool (got {type(result).__name__})"
+            error = f"Validator function must return bool (got {type(result).__name__})"  # type: ignore[unreachable]
             return False, error
 
         if not result:

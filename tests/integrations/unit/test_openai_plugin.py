@@ -272,13 +272,15 @@ class TestOpenAIPlugin:
         plugin = OpenAIPlugin()
 
         # Mock TemplateEngine to raise exception
-        with patch(
-            "prompt_manager.plugins.openai_plugin.TemplateEngine",
-            side_effect=Exception("Template engine failed"),
+        with (
+            patch(
+                "prompt_manager.plugins.openai_plugin.TemplateEngine",
+                side_effect=Exception("Template engine failed"),
+            ),
+            pytest.raises(PluginError, match="Failed to initialize OpenAI"),
         ):
-            # Act & Assert
-            with pytest.raises(PluginError, match="Failed to initialize OpenAI"):
-                plugin.initialize({})
+            # Act
+            plugin.initialize({})
 
     def test_render_with_null_integration_raises_error(
         self, plugin: OpenAIPlugin, text_prompt: Prompt

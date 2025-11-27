@@ -15,45 +15,22 @@ schemas:
     strict: true
 
     fields:
-      - name: "data_type"
+      - name: "datasets"
+        type: "list"
+        item_type: "dict"
+        required: true
+        description: "List of datasets to analyze (each with 'name' and 'rows' fields)"
+
+      - name: "analysis_type"
         type: "string"
         required: true
-        description: "Type of data being analyzed"
+        description: "Type of analysis to perform"
         validators:
           - type: "enum"
             allowed_values:
-              - "numerical"
-              - "categorical"
-              - "time-series"
-              - "text"
-              - "mixed"
-            error_message: "Invalid data type"
-
-      - name: "data"
-        type: "string"
-        required: true
-        description: "Data to analyze (CSV, JSON, or text)"
-        validators:
-          - type: "min_length"
-            min_value: 10
-            error_message: "Data must be at least 10 characters"
-
-      - name: "goals"
-        type: "string"
-        required: true
-        description: "Analysis goals and objectives"
-        validators:
-          - type: "min_length"
-            min_value: 10
-            error_message: "Goals must be at least 10 characters"
-          - type: "max_length"
-            max_value: 1000
-
-      - name: "context"
-        type: "string"
-        required: false
-        nullable: true
-        description: "Additional context for analysis"
-        validators:
-          - type: "max_length"
-            max_value: 2000
+              - "trend"
+              - "correlation"
+              - "statistical"
+              - "comparative"
+              - "predictive"
+            error_message: "Invalid analysis type"

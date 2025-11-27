@@ -6,7 +6,7 @@ Provides CRUD operations, filtering, and integration with storage backends.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, List as ListType
 
 import structlog
 
@@ -281,7 +281,7 @@ class PromptRegistry:
         end = offset + limit if limit else None
         return prompts[start:end]
 
-    def get_versions(self, prompt_id: str) -> list[str]:
+    def get_versions(self, prompt_id: str) -> ListType[str]:
         """
         Get all versions for a prompt.
 
@@ -324,7 +324,7 @@ class PromptRegistry:
         self,
         *,
         status: PromptStatus | None = None,
-        tags: list[str] | None = None,
+        tags: ListType[str] | None = None,
         category: str | None = None,
     ) -> int:
         """
@@ -373,7 +373,7 @@ class PromptRegistry:
         total_prompts = len(self._prompts)
         total_versions = sum(len(versions) for versions in self._prompts.values())
 
-        status_counts = {}
+        status_counts: dict[str, int] = {}
         for versions in self._prompts.values():
             if not versions:
                 continue

@@ -3,10 +3,10 @@ version: 1.0.0
 uid: e3960aca-bfe7-4c16-a3c6-68f4f5e757af
 format: text
 template:
-  content: Hello {{name}}! Welcome to {{service}}.
+  content: Hello {{name}}! Welcome to our platform. Your role is {{role}}.
   variables:
   - name
-  - service
+  - role
   partials: {}
   helpers: {}
 chat_template: null

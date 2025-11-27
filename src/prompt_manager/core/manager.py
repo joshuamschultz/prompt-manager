@@ -17,6 +17,7 @@ from prompt_manager.core.models import (
     Prompt,
     PromptExecution,
     PromptFormat,
+    PromptStatus,
     PromptVersion,
 )
 from prompt_manager.core.protocols import (
@@ -305,9 +306,9 @@ class PromptManager:
 
         # Validate output if schema defined (updated to use new API)
         if prompt.output_schema:
-            return self.validate_output(prompt_id, llm_response, version=version)
+            return self.validate_output(prompt_id, llm_response, version=version)  # type: ignore[arg-type]
 
-        return llm_response
+        return llm_response  # type: ignore[return-value]
 
     def validate_output(
         self,
@@ -475,7 +476,7 @@ class PromptManager:
             version: Optional version (gets latest if None)
 
         Returns:
-            Requested prompt
+            Requested prompt with schema_loader injected
 
         Raises:
             PromptNotFoundError: If prompt not found
@@ -483,7 +484,10 @@ class PromptManager:
         Example:
             >>> prompt = manager.get_prompt("greeting")
         """
-        return self._registry.get(prompt_id, version)
+        prompt = self._registry.get(prompt_id, version)
+        # Inject schema loader so prompt.render() can use it
+        prompt._schema_loader = self._schema_loader
+        return prompt
 
     def update_prompt(
         self,
@@ -832,9 +836,9 @@ class PromptManager:
 
         # Format as string
         parts = []
-        for msg in rendered_messages:
-            role = msg["role"]
-            content = msg["content"]
+        for msg in rendered_messages:  # type: ignore[assignment]
+            role = msg["role"]  # type: ignore[index]
+            content = msg["content"]  # type: ignore[index]
             parts.append(f"{role}: {content}")
 
         formatted_chat = "\n\n".join(parts)
@@ -882,7 +886,7 @@ class PromptManager:
         self,
         *,
         tags: list[str] | None = None,
-        status: str | None = None,
+        status: PromptStatus | None = None,
         category: str | None = None,
         format: PromptFormat | None = None,
     ) -> list[Prompt]:

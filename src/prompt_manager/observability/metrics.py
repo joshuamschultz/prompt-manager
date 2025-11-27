@@ -28,7 +28,7 @@ class MetricsCollector:
         self._last_render: datetime | None = None
         self._logger = logger.bind(component="metrics_collector")
 
-    async def record_render(
+    def record_render(
         self,
         prompt_id: str,
         version: str,
@@ -66,7 +66,7 @@ class MetricsCollector:
             success=success,
         )
 
-    async def record_cache_hit(self, prompt_id: str) -> None:
+    def record_cache_hit(self, prompt_id: str) -> None:
         """
         Record a cache hit.
 
@@ -75,7 +75,7 @@ class MetricsCollector:
         """
         self._cache_hits[prompt_id] += 1
 
-    async def record_cache_miss(self, prompt_id: str) -> None:
+    def record_cache_miss(self, prompt_id: str) -> None:
         """
         Record a cache miss.
 
@@ -84,7 +84,7 @@ class MetricsCollector:
         """
         self._cache_misses[prompt_id] += 1
 
-    async def get_metrics(
+    def get_metrics(
         self,
         *,
         since: datetime | None = None,

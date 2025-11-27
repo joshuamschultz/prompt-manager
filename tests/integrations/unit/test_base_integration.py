@@ -10,7 +10,7 @@ from prompt_manager.integrations.base import BaseIntegration
 class ConcreteIntegration(BaseIntegration[str]):
     """Concrete implementation of BaseIntegration for testing."""
 
-    async def convert(self, prompt: Prompt, variables: dict[str, object]) -> str:
+    def convert(self, prompt: Prompt, variables: dict[str, object]) -> str:
         """Convert prompt to string format."""
         # Simple implementation for testing
         content = prompt.template.content if prompt.template else ""
@@ -182,7 +182,7 @@ class TestGenericTypeParameter:
         """Test integration with string output type."""
 
         class StringIntegration(BaseIntegration[str]):
-            async def convert(self, prompt: Prompt, variables: dict[str, object]) -> str:
+            def convert(self, prompt: Prompt, variables: dict[str, object]) -> str:
                 return "string result"
 
             def validate_compatibility(self, prompt: Prompt) -> bool:
@@ -197,7 +197,7 @@ class TestGenericTypeParameter:
         """Test integration with list output type."""
 
         class ListIntegration(BaseIntegration[list[dict[str, object]]]):
-            async def convert(
+            def convert(
                 self,
                 prompt: Prompt,
                 variables: dict[str, object],
@@ -216,7 +216,7 @@ class TestGenericTypeParameter:
         """Test integration with dict output type."""
 
         class DictIntegration(BaseIntegration[dict[str, object]]):
-            async def convert(
+            def convert(
                 self,
                 prompt: Prompt,
                 variables: dict[str, object],

@@ -7,9 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.0.0] - 2025-01-25
-
-### Added - Dual Sync/Async Interface
+### Added - Removed Async
 
 **MAJOR FEATURE**: All 46 methods now work with or without `await`! The library automatically detects your execution context and runs synchronously or asynchronously as needed.
 
@@ -119,7 +117,7 @@ prompts = await manager.list_prompts()
 - Zero breaking changes - all existing code works without modification
 - Maintains async I/O internally (aiofiles) for optimal performance
 
-## [0.1.0] - 2025-01-19
+## [0.1.0-beta.1] - 2025-11-19
 
 ### Added
 

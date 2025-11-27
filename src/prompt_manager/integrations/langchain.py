@@ -26,6 +26,8 @@ except ImportError:
     # Define placeholder types for type checking
     ChatPromptTemplate = Any  # type: ignore[misc, assignment]
     PromptTemplate = Any  # type: ignore[misc, assignment]
+    HumanMessagePromptTemplate = Any  # type: ignore[misc, assignment]
+    SystemMessagePromptTemplate = Any  # type: ignore[misc, assignment]
 
 
 class LangChainIntegration(BaseIntegration[Any]):
@@ -129,6 +131,7 @@ class LangChainIntegration(BaseIntegration[Any]):
                 content = self._handlebars_to_fstring(msg.content)
 
                 # Map role to appropriate LangChain template
+                template: Any
                 if msg.role == Role.SYSTEM:
                     template = SystemMessagePromptTemplate.from_template(content)
                 elif msg.role == Role.USER:

@@ -35,7 +35,7 @@ class AnthropicIntegration(BaseIntegration[AnthropicRequest]):
         >>> integration = AnthropicIntegration(engine)
         >>>
         >>> chat_prompt = Prompt(id="chat", format=PromptFormat.CHAT, ...)
-        >>> result = await integration.convert(chat_prompt, {})
+        >>> result = integration.convert(chat_prompt, {})
         >>> # result: {
         >>> #   "system": "You are helpful.",
         >>> #   "messages": [{"role": "user", "content": "..."}]

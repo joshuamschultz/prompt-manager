@@ -539,9 +539,11 @@ Implement `ObserverProtocol`:
 ### 4. Custom Template Engines
 
 Implement `TemplateEngineProtocol`:
-- Jinja2 engine
+- Alternative Handlebars implementations
 - Mustache engine
 - Custom DSL
+
+Note: The current implementation uses Handlebars (pybars4). Custom template engines must maintain compatibility with the Handlebars syntax used in existing prompts, or provide clear migration paths.
 
 ## Security Considerations
 

@@ -31,7 +31,7 @@ class OpenTelemetryObserver:
         self._logger = logger.bind(component="otel_observer")
         self._active_spans: dict[str, trace.Span] = {}
 
-    async def on_render_start(
+    def on_render_start(
         self,
         prompt_id: str,
         version: str,
@@ -66,7 +66,7 @@ class OpenTelemetryObserver:
             span_id=span.get_span_context().span_id,
         )
 
-    async def on_render_complete(
+    def on_render_complete(
         self,
         prompt_id: str,
         version: str,
@@ -101,7 +101,7 @@ class OpenTelemetryObserver:
                 execution_id=str(execution.execution_id),
             )
 
-    async def on_render_error(
+    def on_render_error(
         self,
         prompt_id: str,
         version: str,
@@ -136,7 +136,7 @@ class OpenTelemetryObserver:
                 error=str(error),
             )
 
-    async def on_version_created(self, version: PromptVersion) -> None:
+    def on_version_created(self, version: PromptVersion) -> None:
         """
         Create a trace event for version creation.
 

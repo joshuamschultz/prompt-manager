@@ -3,12 +3,15 @@ Standalone test for validation system (doesn't import broken modules).
 """
 
 import asyncio
+import sys
 import tempfile
+import traceback
 from pathlib import Path
+
+import pytest
 import yaml
 
 # Direct imports to avoid broken __init__.py
-import sys
 sys.path.insert(0, "src")
 
 # Import validation modules directly
@@ -30,7 +33,7 @@ from prompt_manager.validation.validators import (
 from prompt_manager.validation.loader import SchemaLoader
 
 
-async def test_basic_models():
+def test_basic_models():
     """Test basic model creation."""
     print("Testing basic models...")
 
@@ -64,7 +67,7 @@ async def test_basic_models():
     print("✓ Registry created successfully")
 
 
-async def test_validators():
+def test_validators():
     """Test validator implementations."""
     print("\nTesting validators...")
 
@@ -99,7 +102,7 @@ async def test_validators():
     print("✓ Email validator works")
 
 
-async def test_yaml_loading():
+def test_yaml_loading():
     """Test loading schemas from YAML."""
     print("\nTesting YAML loading...")
 
@@ -144,7 +147,7 @@ async def test_yaml_loading():
 
         # Load with SchemaLoader
         loader = SchemaLoader()
-        registry = await loader.load_file(schema_path)
+        registry = loader.load_file(schema_path)
 
         assert len(registry.schemas) == 1
         assert registry.schemas[0].name == "product"
@@ -152,7 +155,7 @@ async def test_yaml_loading():
         print(f"✓ Loaded schema from YAML: {registry.schemas[0].name}")
 
 
-async def test_pydantic_model_creation():
+def test_pydantic_model_creation():
     """Test creating Pydantic models from schemas."""
     print("\nTesting Pydantic model creation...")
 
@@ -185,12 +188,12 @@ async def test_pydantic_model_creation():
     # Test validation error
     try:
         UserModel()  # Missing required field
-        assert False, "Should have raised validation error"
+        pytest.fail("Should have raised validation error")
     except Exception:
         print("✓ Validation error correctly raised for missing field")
 
 
-async def test_data_validation():
+def test_data_validation():
     """Test validating data against schema."""
     print("\nTesting data validation...")
 
@@ -217,19 +220,19 @@ async def test_data_validation():
     loader._schema_cache["config"] = schema
 
     # Valid data
-    result = await loader.validate_data("config", {"timeout": 60})
+    result = loader.validate_data("config", {"timeout": 60})
     assert result["timeout"] == 60
     print("✓ Valid data passed validation")
 
     # Invalid data
     try:
-        await loader.validate_data("config", {"timeout": 500})
-        assert False, "Should have raised validation error"
+        loader.validate_data("config", {"timeout": 500})
+        pytest.fail("Should have raised validation error")
     except Exception:
         print("✓ Invalid data correctly rejected")
 
 
-async def test_nested_schema():
+def test_nested_schema():
     """Test nested schema support."""
     print("\nTesting nested schemas...")
 
@@ -266,7 +269,7 @@ async def test_nested_schema():
             yaml.dump(schema_yaml, f)
 
         loader = SchemaLoader()
-        registry = await loader.load_file(schema_path)
+        registry = loader.load_file(schema_path)
 
         assert len(registry.schemas) == 2
         user_schema = registry.get_schema("user")
@@ -276,7 +279,7 @@ async def test_nested_schema():
         print("✓ Nested schemas loaded correctly")
 
 
-async def test_list_validation():
+def test_list_validation():
     """Test list field validation."""
     print("\nTesting list validation...")
 
@@ -305,7 +308,7 @@ async def test_list_validation():
     print("✓ List field created with item type")
 
 
-async def test_enum_field():
+def test_enum_field():
     """Test enum field validation."""
     print("\nTesting enum field...")
 
@@ -332,7 +335,7 @@ async def test_enum_field():
     print("✓ Enum field created with allowed values")
 
 
-async def test_create_example():
+def test_create_example():
     """Test creating example schema file."""
     print("\nTesting example schema creation...")
 
@@ -351,22 +354,22 @@ async def test_create_example():
         print(f"✓ Created example schema with {len(data['schemas'])} schemas")
 
 
-async def main():
+def main():
     """Run all tests."""
     print("=" * 70)
     print("Schema Validation System - Standalone Tests")
     print("=" * 70)
 
     try:
-        await test_basic_models()
-        await test_validators()
-        await test_yaml_loading()
-        await test_pydantic_model_creation()
-        await test_data_validation()
-        await test_nested_schema()
-        await test_list_validation()
-        await test_enum_field()
-        await test_create_example()
+        test_basic_models()
+        test_validators()
+        test_yaml_loading()
+        test_pydantic_model_creation()
+        test_data_validation()
+        test_nested_schema()
+        test_list_validation()
+        test_enum_field()
+        test_create_example()
 
         print("\n" + "=" * 70)
         print("All tests passed! ✓")
@@ -375,10 +378,9 @@ async def main():
 
     except Exception as e:
         print(f"\n✗ Test failed: {e}")
-        import traceback
         traceback.print_exc()
         return 1
 
 
 if __name__ == "__main__":
-    exit(asyncio.run(main()))
+    sys.exit(asyncio.run(main()))

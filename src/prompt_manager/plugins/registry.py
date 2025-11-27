@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import importlib
 import sys
-from typing import Any
+from typing import Any, List as ListType, cast
 
 import structlog
 
@@ -101,7 +101,7 @@ class PluginRegistry:
         """
         return plugin_name in self._plugins
 
-    async def load_from_module(
+    def load_from_module(
         self,
         module_path: str,
         class_name: str,
@@ -139,18 +139,18 @@ class PluginRegistry:
 
             # Initialize if config provided
             if config:
-                await plugin.initialize(config)
+                plugin.initialize(config)
 
             # Register
             self.register(plugin)
 
-            return plugin
+            return cast(PluginProtocol, plugin)
 
         except Exception as e:
             msg = f"Failed to load plugin from {module_path}.{class_name}: {e}"
             raise PluginLoadError(msg) from e
 
-    def discover_entry_points(self, group: str = "prompt_manager.plugins") -> list[str]:
+    def discover_entry_points(self, group: str = "prompt_manager.plugins") -> ListType[str]:
         """
         Discover plugins from setuptools entry points.
 
@@ -204,13 +204,13 @@ class PluginRegistry:
 
         return discovered
 
-    async def shutdown_all(self) -> None:
+    def shutdown_all(self) -> None:
         """Shutdown all registered plugins."""
         self._logger.info("shutting_down_all_plugins")
 
         for name, plugin in self._plugins.items():
             try:
-                await plugin.shutdown()
+                plugin.shutdown()
                 self._logger.info("plugin_shutdown", plugin=name)
             except Exception as e:
                 self._logger.error(

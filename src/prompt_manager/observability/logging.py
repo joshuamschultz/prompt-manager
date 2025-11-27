@@ -27,7 +27,7 @@ class LoggingObserver:
         self._logger = logger.bind(component="logging_observer")
         self._log_level = log_level.upper()
 
-    async def on_render_start(
+    def on_render_start(
         self,
         prompt_id: str,
         version: str,
@@ -49,7 +49,7 @@ class LoggingObserver:
             variables=list(variables.keys()),
         )
 
-    async def on_render_complete(
+    def on_render_complete(
         self,
         prompt_id: str,
         version: str,
@@ -73,7 +73,7 @@ class LoggingObserver:
             content_length=len(execution.rendered_content),
         )
 
-    async def on_render_error(
+    def on_render_error(
         self,
         prompt_id: str,
         version: str,
@@ -95,7 +95,7 @@ class LoggingObserver:
             error_message=str(error),
         )
 
-    async def on_version_created(self, version: PromptVersion) -> None:
+    def on_version_created(self, version: PromptVersion) -> None:
         """
         Log when a new version is created.
 

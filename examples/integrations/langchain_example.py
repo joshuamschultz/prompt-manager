@@ -329,7 +329,11 @@ async def main():
     storage = InMemoryStorage()
     registry = PromptRegistry(storage=storage)
     manager = PromptManager(registry=registry)
-    integration = LangChainIntegration(manager.template_engine)
+
+    # Create template engine for integration
+    from prompt_manager.core.template import TemplateEngine
+    template_engine = TemplateEngine()
+    integration = LangChainIntegration(template_engine)
 
     # Create sample prompts
     await create_sample_prompts(manager)

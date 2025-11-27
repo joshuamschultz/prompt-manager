@@ -80,9 +80,9 @@ class TestSchemaField:
         SchemaField(name="validName123", type=FieldType.STRING)
 
         # Invalid names
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Field name must be"):
             SchemaField(name="invalid name", type=FieldType.STRING)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Field name must be"):
             SchemaField(name="invalid@name", type=FieldType.STRING)
 
     def test_optional_field_requires_default_or_nullable(self) -> None:
@@ -157,7 +157,7 @@ class TestSchema:
         )
 
         # Invalid names
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Schema name must be"):
             Schema(
                 name="invalid schema",
                 fields=[SchemaField(name="field", type=FieldType.STRING, required=True)],
@@ -451,7 +451,7 @@ class TestSchemaLoader:
             ],
         }
 
-    async def test_load_file(
+    def test_load_file(
         self, loader: SchemaLoader, sample_schema_yaml: dict, tmp_path: Path
     ) -> None:
         """Test loading schema from file."""
@@ -461,30 +461,30 @@ class TestSchemaLoader:
             yaml.dump(sample_schema_yaml, f)
 
         # Load file
-        registry = await loader.load_file(schema_file)
+        registry = loader.load_file(schema_file)
 
         assert len(registry.schemas) == 1
         assert registry.schemas[0].name == "user"
         assert len(registry.schemas[0].fields) == 3
 
-    async def test_load_invalid_yaml(self, loader: SchemaLoader, tmp_path: Path) -> None:
+    def test_load_invalid_yaml(self, loader: SchemaLoader, tmp_path: Path) -> None:
         """Test loading invalid YAML."""
         schema_file = tmp_path / "invalid.yaml"
         with schema_file.open("w") as f:
             f.write("invalid: yaml: content:")
 
         with pytest.raises(SchemaParseError):
-            await loader.load_file(schema_file)
+            loader.load_file(schema_file)
 
-    async def test_load_empty_file(self, loader: SchemaLoader, tmp_path: Path) -> None:
+    def test_load_empty_file(self, loader: SchemaLoader, tmp_path: Path) -> None:
         """Test loading empty file."""
         schema_file = tmp_path / "empty.yaml"
         schema_file.touch()
 
         with pytest.raises(SchemaParseError, match="Empty"):
-            await loader.load_file(schema_file)
+            loader.load_file(schema_file)
 
-    async def test_load_directory(
+    def test_load_directory(
         self, loader: SchemaLoader, sample_schema_yaml: dict, tmp_path: Path
     ) -> None:
         """Test loading schemas from directory."""
@@ -495,7 +495,7 @@ class TestSchemaLoader:
                 yaml.dump(sample_schema_yaml, f)
 
         # Load directory
-        registries = await loader.load_directory(tmp_path)
+        registries = loader.load_directory(tmp_path)
 
         assert len(registries) == 3
 
@@ -532,7 +532,7 @@ class TestSchemaLoader:
         with pytest.raises(Exception):
             model()  # Missing required field
 
-    async def test_validate_data(self, loader: SchemaLoader) -> None:
+    def test_validate_data(self, loader: SchemaLoader) -> None:
         """Test validating data against schema."""
         schema = Schema(
             name="user",
@@ -544,13 +544,13 @@ class TestSchemaLoader:
         loader._schema_cache["user"] = schema
 
         # Valid data
-        result = await loader.validate_data("user", {"username": "testuser", "age": 25})
+        result = loader.validate_data("user", {"username": "testuser", "age": 25})
         assert result["username"] == "testuser"
         assert result["age"] == 25
 
         # Invalid data
         with pytest.raises(SchemaValidationError):
-            await loader.validate_data("user", {})  # Missing required field
+            loader.validate_data("user", {})  # Missing required field
 
     def test_clear_cache(self, loader: SchemaLoader) -> None:
         """Test clearing cache."""

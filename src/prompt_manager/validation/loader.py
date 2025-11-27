@@ -5,7 +5,7 @@ Provides loading and caching of schema definitions.
 """
 
 from pathlib import Path
-from typing import Any, Type
+from typing import Any, Type, cast
 
 import structlog
 import yaml
@@ -207,9 +207,9 @@ class SchemaLoader:
 
         self._logger.debug("pydantic_model_created", schema=name, fields=len(field_definitions))
 
-        return model
+        return cast(Type[BaseModel], model)
 
-    def _get_python_type(self, field: SchemaField) -> Type[Any]:
+    def _get_python_type(self, field: SchemaField) -> Any:
         """
         Convert schema field type to Python type.
 
@@ -217,7 +217,7 @@ class SchemaLoader:
             field: Schema field
 
         Returns:
-            Python type annotation
+            Python type annotation (may be a generic type like list[str])
         """
         type_mapping = {
             FieldType.STRING: str,
@@ -237,7 +237,7 @@ class SchemaLoader:
         # Handle list with item type
         if field.type == FieldType.LIST and field.item_type:
             item_type = type_mapping.get(field.item_type, Any)
-            return list[item_type]
+            return list[item_type]  # type: ignore[valid-type]
 
         # Handle nested schema
         if field.nested_schema:

@@ -115,7 +115,10 @@ registry = PromptRegistry(storage=storage)
 manager = PromptManager(registry=registry)
 
 # 2. Create integration
-integration = OpenAIIntegration(manager.template_engine)
+from prompt_manager.core.template import TemplateEngine
+
+template_engine = TemplateEngine()
+integration = OpenAIIntegration(template_engine)
 
 # 3. Create or load prompt
 prompt = await manager.get_prompt("my_prompt")
