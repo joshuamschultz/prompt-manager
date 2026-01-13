@@ -63,7 +63,7 @@ jobs:
         run: poetry publish -r testpypi --no-interaction
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: dist-test
           path: dist/
