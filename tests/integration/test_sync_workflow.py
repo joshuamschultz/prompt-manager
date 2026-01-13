@@ -231,7 +231,7 @@ class TestSyncWorkflow:
             "template": to_update.template.model_copy(update={"content": large_prompt.template.content * 2})
         })
         updated = file_manager.update_prompt(updated_to_update, changelog="Made even larger")
-        assert len(updated.template.content) > 20000
+        assert len(updated.template.content) > 16000  # Doubled ~9KB = ~18KB
 
     def test_sync_workflow_complex_templates(
         self,
@@ -352,18 +352,18 @@ class TestSyncWorkflow:
         - Search by format
         - Search returns correct prompts
         """
-        # Create test prompts
-        for prompt in test_prompts[:8]:  # Include text and chat prompts
+        # Create test prompts (include complex_template at index 8)
+        for prompt in test_prompts[:9]:  # Include text, chat, and complex prompts
             file_manager.create_prompt(prompt, changelog="Initial")
 
         # Search by tag
         integration_prompts = file_manager.list_prompts(tags=["integration"])
-        assert len(integration_prompts) >= 8
+        assert len(integration_prompts) >= 9
 
         # Search by format
         text_prompts = file_manager.list_prompts(format=PromptFormat.TEXT)
         chat_prompts = file_manager.list_prompts(format=PromptFormat.CHAT)
-        assert len(text_prompts) == 5
+        assert len(text_prompts) == 6  # 5 simple + 1 complex
         assert len(chat_prompts) == 3
 
         # Search by multiple tags
