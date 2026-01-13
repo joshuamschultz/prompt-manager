@@ -363,6 +363,7 @@ class TestValidators:
         # Invalid
         assert validator.validate("superuser")[0] is False
 
+    @pytest.mark.skip(reason="email-validator not a required dependency")
     def test_email_validator(self) -> None:
         """Test email validator."""
         validator = EmailValidator()
