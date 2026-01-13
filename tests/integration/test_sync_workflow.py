@@ -84,10 +84,10 @@ class TestSyncWorkflow:
             assert history[0].version == "1.0.1"  # latest version
 
         # Verify version files exist
-        version_dir = integration_tmp_path / "versions"
+        prompt_dir = integration_tmp_path / "prompts"
         for prompt in updated_prompts:
-            v1_file = version_dir / f"{prompt.id}_1.0.0.json"
-            v2_file = version_dir / f"{prompt.id}_1.0.1.json"
+            v1_file = prompt_dir / prompt.id / "_versions" / "1.0.0.yaml"
+            v2_file = prompt_dir / prompt.id / "_versions" / "1.0.1.yaml"
             assert v1_file.exists(), f"Version 1.0.0 file should exist"
             assert v2_file.exists(), f"Version 1.0.1 file should exist"
 

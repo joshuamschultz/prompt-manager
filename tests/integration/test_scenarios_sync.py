@@ -162,7 +162,7 @@ class TestSyncUserScenarios:
         print(f"\nCreate 50KB prompt: {create_time*1000:.0f}ms")
 
         # Verify file size
-        prompt_file = integration_tmp_path / "prompts" / "large_prompt_test.json"
+        prompt_file = integration_tmp_path / "prompts" / "large_prompt_test.yaml"
         assert prompt_file.exists()
         file_size = prompt_file.stat().st_size
         print(f"Prompt file size: {file_size / 1024:.1f}KB")
