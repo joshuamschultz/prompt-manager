@@ -8,14 +8,28 @@ This package uses Poetry for dependency management and publishing.
 
 The project has GitHub Actions workflows configured for automated publishing:
 
-1. **Via GitHub Release** (most common):
+1. **Via Git Tag** (easiest - auto-publishes on tag push):
    ```bash
-   # Create a new release on GitHub
+   # Update version in pyproject.toml and CHANGELOG.md first
+   git add -A
+   git commit -m "chore: release v0.1.0-beta.X"
+   git push origin master
+
+   # Create and push tag
+   git tag v0.1.0-beta.X
+   git push origin v0.1.0-beta.X
+
+   # GitHub Actions will automatically build and publish to PyPI
+   ```
+
+2. **Via GitHub Release**:
+   ```bash
+   # Create a new release on GitHub with a tag (e.g., v0.1.0-beta.X)
    # The publish.yml workflow will automatically trigger
    # Token is stored in GitHub Secrets as PYPI_TOKEN
    ```
 
-2. **Via Manual Workflow Dispatch**:
+3. **Via Manual Workflow Dispatch**:
    - Go to GitHub Actions → Publish to PyPI workflow
    - Click "Run workflow"
    - Select target: `pypi` or `testpypi`
