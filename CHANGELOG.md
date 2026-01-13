@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0-beta.4] - 2026-01-13
+
+### Changed
+- Testing automated PyPI publishing via git tag push
+
 ## [0.1.0-beta.3] - 2026-01-13
 
 ### Fixed

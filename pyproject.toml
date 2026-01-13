@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "agentic-prompt-manager"
-version = "0.1.0-beta.3"
+version = "0.1.0-beta.4"
 description = "Production-ready prompt management system with versioning, validation, and framework integrations for OpenAI, Anthropic, LangChain, and LiteLLM"
 authors = ["Josh Schultz <josh@example.com>"]
 readme = "README.md"
