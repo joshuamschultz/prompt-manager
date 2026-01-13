@@ -47,8 +47,10 @@ class TestAsyncWorkflow:
         # Verify all prompts exist in storage
         prompt_dir = integration_tmp_path / "prompts"
         for prompt in created_prompts:
-            prompt_file = prompt_dir / prompt.id / "1.0.0.json"
+            prompt_file = prompt_dir / f"{prompt.id}.yaml"
             assert prompt_file.exists(), f"Prompt file {prompt_file} should exist"
+            version_file = prompt_dir / prompt.id / "_versions" / "1.0.0.yaml"
+            assert version_file.exists(), f"Version file {version_file} should exist"
 
         # Render each prompt
         rendered_results = []
@@ -90,7 +92,7 @@ class TestAsyncWorkflow:
                 file_manager.get_prompt(prompt.id)
 
     
-    def test_async_workflow_with_concurrent_creates(
+    async def test_async_workflow_with_concurrent_creates(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -118,7 +120,7 @@ class TestAsyncWorkflow:
 
         # Create concurrently
         start = time.perf_counter()
-        results = asyncio.gather(
+        results = await asyncio.gather(
             *[
                 file_manager.create_prompt(p, changelog=f"Concurrent {i}")
                 for i, p in enumerate(prompts_to_create)
@@ -137,7 +139,7 @@ class TestAsyncWorkflow:
         assert len(all_prompts) == 20
 
     
-    def test_async_workflow_with_concurrent_renders(
+    async def test_async_workflow_with_concurrent_renders(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -169,7 +171,7 @@ class TestAsyncWorkflow:
         # Render all concurrently 10 times
         total_renders = 0
         for _ in range(10):
-            results = asyncio.gather(
+            results = await asyncio.gather(
                 *[
                     file_manager.render(prompt_id, sample_variables)
                     for prompt_id in created_ids
@@ -184,7 +186,7 @@ class TestAsyncWorkflow:
         assert total_renders == 100
 
     
-    def test_async_workflow_with_concurrent_updates(
+    async def test_async_workflow_with_concurrent_updates(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -220,7 +222,7 @@ class TestAsyncWorkflow:
             return file_manager.update_prompt(updated_current_p, changelog=f"Update {i}")
 
         # Update all concurrently
-        results = asyncio.gather(
+        results = await asyncio.gather(
             *[update_prompt_helper(prompt_id, i) for i, prompt_id in enumerate(created_ids)]
         )
 
@@ -236,7 +238,7 @@ class TestAsyncWorkflow:
             ids_seen.add(updated.id)
 
     
-    def test_async_workflow_streaming_results(
+    async def test_async_workflow_streaming_results(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -273,7 +275,7 @@ class TestAsyncWorkflow:
 
         completed_count = 0
         results = []
-        for coro in asyncio.as_completed(render_tasks):
+        async for coro in asyncio.as_completed(render_tasks):
             result = coro
             assert isinstance(result, str)
             results.append(result)
@@ -283,7 +285,7 @@ class TestAsyncWorkflow:
         assert len(results) == 50
 
     
-    def test_async_workflow_error_propagation(
+    async def test_async_workflow_error_propagation(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -308,7 +310,7 @@ class TestAsyncWorkflow:
         ]
 
         # Gather with return_exceptions=True
-        results = asyncio.gather(*tasks, return_exceptions=True)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # First should succeed
         assert isinstance(results[0], Prompt)
@@ -319,7 +321,7 @@ class TestAsyncWorkflow:
         assert isinstance(results[2], PromptNotFoundError)
 
     
-    def test_async_workflow_with_version_tracking(
+    async def test_async_workflow_with_version_tracking(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -362,7 +364,7 @@ class TestAsyncWorkflow:
         assert comparison["versions"]["to"] == "1.0.5"
 
     
-    def test_async_workflow_rapid_operations(
+    async def test_async_workflow_rapid_operations(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -391,7 +393,7 @@ class TestAsyncWorkflow:
 
         # Rapid concurrent create
         start = time.perf_counter()
-        created = asyncio.gather(
+        created = await asyncio.gather(
             *[
                 file_manager.create_prompt(p, changelog=f"Rapid {i}")
                 for i, p in enumerate(prompts_to_create)
@@ -404,7 +406,7 @@ class TestAsyncWorkflow:
 
         # Rapid concurrent render
         start = time.perf_counter()
-        rendered = asyncio.gather(
+        rendered = await asyncio.gather(
             *[
                 file_manager.render(p.id, sample_variables)
                 for p in created
@@ -415,7 +417,7 @@ class TestAsyncWorkflow:
         assert render_time < 5.0
 
     
-    def test_async_workflow_large_prompts(
+    async def test_async_workflow_large_prompts(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -444,7 +446,7 @@ class TestAsyncWorkflow:
         assert render_time < 3.0  # Large template + large variable = reasonable timeout
 
     
-    def test_async_workflow_complex_templates(
+    async def test_async_workflow_complex_templates(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -471,7 +473,7 @@ class TestAsyncWorkflow:
         assert all(item in result for item in ["Item 1", "Item 2", "Item 3"])
 
     
-    def test_async_workflow_persistence_across_instances(
+    async def test_async_workflow_persistence_across_instances(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],
@@ -500,7 +502,7 @@ class TestAsyncWorkflow:
         assert len(prompts) == 5
 
     
-    def test_async_workflow_with_metadata_search(
+    async def test_async_workflow_with_metadata_search(
         self,
         file_manager: PromptManager,
         test_prompts: list[Prompt],

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0-beta.3] - 2026-01-13
+
+### Fixed
+- Fixed test file format expectations (YAML instead of JSON)
+- Updated integration tests for current storage implementation
+- Cleaned up async test suite
+
 ### Added - Removed Async
 
 **MAJOR FEATURE**: All 46 methods now work with or without `await`! The library automatically detects your execution context and runs synchronously or asynchronously as needed.

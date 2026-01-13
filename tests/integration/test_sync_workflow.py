@@ -52,8 +52,10 @@ class TestSyncWorkflow:
         # Verify all prompts exist in storage
         prompt_dir = integration_tmp_path / "prompts"
         for prompt in created_prompts:
-            prompt_file = prompt_dir / prompt.id / "1.0.0.json"
+            prompt_file = prompt_dir / f"{prompt.id}.yaml"
             assert prompt_file.exists(), f"Prompt file {prompt_file} should exist"
+            version_file = prompt_dir / prompt.id / "_versions" / "1.0.0.yaml"
+            assert version_file.exists(), f"Version file {version_file} should exist"
 
         # Render text prompts only (first 5 are text)
         rendered_results = []
