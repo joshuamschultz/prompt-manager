@@ -1,14 +1,15 @@
 """End-to-end integration tests for OpenAI SDK integration."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
 from prompt_manager.core.models import (
+    ChatPromptTemplate,
+    Message,
     Prompt,
     PromptFormat,
     PromptTemplate,
-    ChatPromptTemplate,
-    Message,
     Role,
 )
 from prompt_manager.core.template import TemplateEngine

@@ -33,11 +33,8 @@ from prompt_manager.exceptions import (
     StorageWriteError,
     TemplateError,
     TemplateRenderError,
-    TemplateSyntaxError,
-    VersionError,
     VersionNotFoundError,
 )
-
 
 # ============================================================================
 # Task 12.1: Nested Event Loop Detection Tests

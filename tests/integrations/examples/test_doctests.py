@@ -1,6 +1,7 @@
 """Run doctests from integration modules."""
 
 import doctest
+
 import pytest
 
 
@@ -8,16 +9,16 @@ def load_tests(loader, tests, ignore):
     """Load doctests from integration modules."""
     # Import modules with doctests
     try:
-        from prompt_manager.integrations import base, openai, anthropic, langchain, litellm
-        
+        from prompt_manager.integrations import anthropic, base, langchain, litellm, openai
+
         modules = [base, openai, anthropic, langchain, litellm]
-        
+
         for module in modules:
             tests.addTests(doctest.DocTestSuite(module))
-            
+
     except Exception:
         pass  # Skip if modules don't have doctests
-        
+
     return tests
 
 
@@ -30,11 +31,11 @@ def test_docstrings_present():
     assert openai.OpenAIIntegration.__doc__ is not None
 
 
-@pytest.mark.integration  
+@pytest.mark.integration
 def test_integration_modules_importable():
     """Test that integration modules can be imported for doctest."""
-    from prompt_manager.integrations import base, openai, anthropic, litellm
-    
+    from prompt_manager.integrations import anthropic, base, litellm, openai
+
     assert base is not None
     assert openai is not None
     assert anthropic is not None

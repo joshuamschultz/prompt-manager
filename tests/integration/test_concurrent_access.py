@@ -11,8 +11,6 @@ import asyncio
 import threading
 from typing import Any
 
-import pytest
-
 from prompt_manager import PromptManager
 from prompt_manager.core.models import (
     Prompt,
@@ -21,7 +19,6 @@ from prompt_manager.core.models import (
     PromptStatus,
     PromptTemplate,
 )
-
 
 # ============================================================================
 # Task 12.4: Concurrent Access Pattern Tests
@@ -176,14 +173,13 @@ def sync_thread_worker(manager: PromptManager, thread_id: int, operations: int) 
                 # List (shared operation)
                 prompts = manager.list_prompts()
                 results.append(("list", len(prompts)))
-            else:
-                # Try to get own prompt
-                if i >= 3:
-                    try:
-                        retrieved = manager.get_prompt(f"thread_{thread_id}_prompt_0")
-                        results.append(("get", retrieved.id))
-                    except:
-                        results.append(("get", "not_found"))
+            # Try to get own prompt
+            elif i >= 3:
+                try:
+                    retrieved = manager.get_prompt(f"thread_{thread_id}_prompt_0")
+                    results.append(("get", retrieved.id))
+                except:
+                    results.append(("get", "not_found"))
         except Exception as e:
             results.append(("error", str(e)))
 
@@ -446,7 +442,7 @@ def test_stress_concurrent_operations(file_manager: PromptManager):
             version="1.0.0",
             format=PromptFormat.TEXT,
             status=PromptStatus.ACTIVE,
-            template=PromptTemplate(content=f"Stress {{{{value}}}}", variables=["value"]),
+            template=PromptTemplate(content="Stress {{value}}", variables=["value"]),
             metadata=PromptMetadata(author="Test", description=f"Stress {i}"),
         )
         create_tasks.append(file_manager.create_prompt(prompt))

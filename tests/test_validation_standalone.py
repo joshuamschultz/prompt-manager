@@ -15,22 +15,22 @@ import yaml
 sys.path.insert(0, "src")
 
 # Import validation modules directly
+from prompt_manager.validation.loader import SchemaLoader
 from prompt_manager.validation.models import (
+    FieldType,
+    FieldValidator,
     Schema,
     SchemaField,
-    FieldType,
-    ValidationType,
-    FieldValidator,
     SchemaRegistry,
+    ValidationType,
 )
 from prompt_manager.validation.validators import (
+    EmailValidator,
+    EnumValidator,
     LengthValidator,
     RangeValidator,
     RegexValidator,
-    EnumValidator,
-    EmailValidator,
 )
-from prompt_manager.validation.loader import SchemaLoader
 
 
 def test_basic_models():

@@ -14,7 +14,7 @@ from prompt_manager.exceptions import PromptNotFoundError
 class TestDualModeWorkflow:
     """Test interleaved sync and async operations maintain consistency."""
 
-    
+
     def test_interleaved_sync_async_operations(
         self,
         file_manager: PromptManager,
@@ -60,7 +60,7 @@ class TestDualModeWorkflow:
         # Sync update A
         current_prompt_a = file_manager.get_prompt(prompt_a.id)
         updated_current_prompt_a = current_prompt_a.model_copy(update={
-            "template": current_prompt_a.template.model_copy(update={"content": f"Sync updated content"})
+            "template": current_prompt_a.template.model_copy(update={"content": "Sync updated content"})
         })
         updated_a = file_manager.update_prompt(updated_current_prompt_a, changelog="Sync update")
         assert updated_a.version == "1.0.1"
@@ -68,7 +68,7 @@ class TestDualModeWorkflow:
         # Async update B
         current_prompt_b = file_manager.get_prompt(prompt_b.id)
         updated_current_prompt_b = current_prompt_b.model_copy(update={
-            "template": current_prompt_b.template.model_copy(update={"content": f"Async updated content"})
+            "template": current_prompt_b.template.model_copy(update={"content": "Async updated content"})
         })
         updated_b = file_manager.update_prompt(updated_current_prompt_b, changelog="Async update")
         assert updated_b.version == "1.0.1"
@@ -80,7 +80,7 @@ class TestDualModeWorkflow:
         assert sync_retrieved_a.version == "1.0.1"
         assert async_retrieved_b.version == "1.0.1"
 
-    
+
     def test_sync_create_async_consume(
         self,
         file_manager: PromptManager,
@@ -128,7 +128,7 @@ class TestDualModeWorkflow:
         assert len(updated) == 5
         assert all(u.version == "1.0.1" for u in updated)
 
-    
+
     def test_async_create_sync_consume(
         self,
         file_manager: PromptManager,
@@ -170,7 +170,7 @@ class TestDualModeWorkflow:
             updated = file_manager.update_prompt(updated_current_p, changelog=f"Sync update {i}")
             assert updated.version == "1.0.1"
 
-    
+
     def test_storage_consistency_across_modes(
         self,
         file_manager: PromptManager,
@@ -198,7 +198,7 @@ class TestDualModeWorkflow:
         # Update in async mode
         current_prompt = file_manager.get_prompt(prompt.id)
         updated_current_prompt = current_prompt.model_copy(update={
-            "template": current_prompt.template.model_copy(update={"content": f"Async updated"})
+            "template": current_prompt.template.model_copy(update={"content": "Async updated"})
         })
         updated = file_manager.update_prompt(updated_current_prompt, changelog="Async update")
         assert updated.version == "1.0.1"
@@ -215,7 +215,7 @@ class TestDualModeWorkflow:
         with pytest.raises(PromptNotFoundError):
             file_manager.get_prompt(prompt.id)
 
-    
+
     def test_version_history_consistency(
         self,
         file_manager: PromptManager,
@@ -240,7 +240,7 @@ class TestDualModeWorkflow:
         # Update in async (v1.0.1)
         current_prompt = file_manager.get_prompt(prompt.id)
         updated_current_prompt = current_prompt.model_copy(update={
-            "template": current_prompt.template.model_copy(update={"content": f"Async v1.0.1"})
+            "template": current_prompt.template.model_copy(update={"content": "Async v1.0.1"})
         })
         updated1 = file_manager.update_prompt(updated_current_prompt, changelog="Async update to v1.0.1")
         assert updated1.version == "1.0.1"
@@ -248,7 +248,7 @@ class TestDualModeWorkflow:
         # Update in sync (v1.0.2)
         current_prompt = file_manager.get_prompt(prompt.id)
         updated_current_prompt = current_prompt.model_copy(update={
-            "template": current_prompt.template.model_copy(update={"content": f"Sync v1.0.2"})
+            "template": current_prompt.template.model_copy(update={"content": "Sync v1.0.2"})
         })
         updated2 = file_manager.update_prompt(updated_current_prompt, changelog="Sync update to v1.0.2")
         assert updated2.version == "1.0.2"
@@ -268,7 +268,7 @@ class TestDualModeWorkflow:
             assert sync_v.version == async_v.version
             assert sync_v.id == async_v.id
 
-    
+
     def test_list_operations_consistency(
         self,
         file_manager: PromptManager,
@@ -302,7 +302,7 @@ class TestDualModeWorkflow:
         async_ids = {p.id for p in async_list}
         assert sync_ids == async_ids
 
-    
+
     def test_search_operations_consistency(
         self,
         file_manager: PromptManager,
@@ -332,7 +332,7 @@ class TestDualModeWorkflow:
         async_ids = {p.id for p in async_search}
         assert sync_ids == async_ids
 
-    
+
     def test_mixed_mode_error_handling(
         self,
         file_manager: PromptManager,
@@ -359,7 +359,7 @@ class TestDualModeWorkflow:
         assert "nonexistent" in str(sync_exc.value)
         assert "nonexistent" in str(async_exc.value)
 
-    
+
     def test_comparison_operations_consistency(
         self,
         file_manager: PromptManager,
@@ -379,7 +379,7 @@ class TestDualModeWorkflow:
         file_manager.create_prompt(prompt, changelog="v1.0.0")
         current_prompt = file_manager.get_prompt(prompt.id)
         updated_current_prompt = current_prompt.model_copy(update={
-            "template": current_prompt.template.model_copy(update={"content": f"Updated"})
+            "template": current_prompt.template.model_copy(update={"content": "Updated"})
         })
         file_manager.update_prompt(updated_current_prompt, changelog="v1.0.1")
 

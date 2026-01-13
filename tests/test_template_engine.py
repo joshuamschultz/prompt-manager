@@ -3,7 +3,7 @@
 import pytest
 
 from prompt_manager.core.template import ChatTemplateEngine, TemplateEngine
-from prompt_manager.exceptions import TemplateRenderError, TemplateSyntaxError
+from prompt_manager.exceptions import TemplateRenderError
 
 
 @pytest.mark.unit
@@ -34,7 +34,6 @@ class TestTemplateEngine:
     def test_missing_variable(self, engine: TemplateEngine) -> None:
         """Test rendering with missing variable."""
         # pybars raises error for missing variables
-        from prompt_manager.exceptions import TemplateRenderError
 
         with pytest.raises(TemplateRenderError, match="Could not find variable"):
             engine.render(

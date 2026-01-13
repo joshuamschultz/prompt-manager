@@ -5,20 +5,19 @@ and that the type system can catch type errors. Some tests require mypy
 for full validation.
 """
 
-import pytest
 
 from prompt_manager.integrations.types import (
-    OpenAIMessageDict,
-    AnthropicMessageDict,
-    OpenAIFunctionCallDict,
-    OpenAIToolCallDict,
-    AnthropicRequestDict,
-    OpenAIMessage,
-    OpenAIChatCompletion,
     AnthropicMessage,
+    AnthropicMessageDict,
     AnthropicRequest,
-    LiteLLMMessage,
+    AnthropicRequestDict,
     LiteLLMCompletion,
+    LiteLLMMessage,
+    OpenAIChatCompletion,
+    OpenAIFunctionCallDict,
+    OpenAIMessage,
+    OpenAIMessageDict,
+    OpenAIToolCallDict,
 )
 
 

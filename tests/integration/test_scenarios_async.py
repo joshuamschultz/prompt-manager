@@ -21,7 +21,7 @@ from prompt_manager.exceptions import PromptNotFoundError
 class TestAsyncUserScenarios:
     """Test real-world asynchronous usage patterns."""
 
-    
+
     def test_fastapi_integration_simulation(
         self,
         file_manager: PromptManager,
@@ -71,7 +71,7 @@ class TestAsyncUserScenarios:
         prompts = fastapi_handler_list()
         assert len(prompts) == 1
 
-    
+
     def test_aiohttp_integration_simulation(
         self,
         file_manager: PromptManager,
@@ -94,12 +94,12 @@ class TestAsyncUserScenarios:
             if action == "create":
                 prompt = test_prompts[0]
                 return file_manager.create_prompt(prompt, changelog="aiohttp create")
-            elif action == "render":
+            if action == "render":
                 return file_manager.render(
                     request_data["prompt_id"],
                     request_data["variables"]
                 )
-            elif action == "list":
+            if action == "list":
                 return file_manager.list_prompts()
 
         # Simulate multiple requests
@@ -116,7 +116,7 @@ class TestAsyncUserScenarios:
         prompts = aiohttp_handler({"action": "list"})
         assert len(prompts) == 1
 
-    
+
     def test_concurrent_operations_with_gather(
         self,
         file_manager: PromptManager,
@@ -192,7 +192,7 @@ class TestAsyncUserScenarios:
         all_prompts = file_manager.list_prompts()
         assert len(all_prompts) == 50
 
-    
+
     def test_streaming_with_as_completed(
         self,
         file_manager: PromptManager,
@@ -248,7 +248,7 @@ class TestAsyncUserScenarios:
 
         assert len(results) == 100
 
-    
+
     def test_async_error_handling(
         self,
         file_manager: PromptManager,
@@ -287,7 +287,7 @@ class TestAsyncUserScenarios:
         another = file_manager.create_prompt(test_prompts[1], changelog="After errors")
         assert another.id == test_prompts[1].id
 
-    
+
     def test_async_batch_operations(
         self,
         file_manager: PromptManager,
@@ -347,7 +347,7 @@ class TestAsyncUserScenarios:
         remaining = file_manager.list_prompts()
         assert len(remaining) == 75
 
-    
+
     def test_async_search_operations(
         self,
         file_manager: PromptManager,
@@ -383,7 +383,7 @@ class TestAsyncUserScenarios:
         complex_prompts = file_manager.list_prompts(tags=["integration", "complex"])
         assert len(complex_prompts) >= 1
 
-    
+
     def test_async_version_operations(
         self,
         file_manager: PromptManager,
@@ -428,7 +428,7 @@ class TestAsyncUserScenarios:
         assert comparison["versions"]["from"] == "1.0.0"
         assert comparison["versions"]["to"] == "1.0.10"
 
-    
+
     def test_async_large_prompt_operations(
         self,
         file_manager: PromptManager,
@@ -465,7 +465,7 @@ class TestAsyncUserScenarios:
         assert len(results) == 10
         assert all(len(r) > 50000 for r in results)
 
-    
+
     def test_async_mixed_operation_patterns(
         self,
         file_manager: PromptManager,
@@ -524,7 +524,7 @@ class TestAsyncUserScenarios:
         remaining = file_manager.list_prompts()
         assert len(remaining) == 15
 
-    
+
     def test_async_real_world_api_simulation(
         self,
         file_manager: PromptManager,
@@ -567,7 +567,7 @@ class TestAsyncUserScenarios:
             created = file_manager.create_prompt(prompt, changelog="User 2 create")
             current_created = file_manager.get_prompt(created.id)
             updated_current_created = current_created.model_copy(update={
-                "template": current_created.template.model_copy(update={"content": f"User 2 update"})
+                "template": current_created.template.model_copy(update={"content": "User 2 update"})
             })
             updated = file_manager.update_prompt(updated_current_created, changelog="Update")
             return created, updated

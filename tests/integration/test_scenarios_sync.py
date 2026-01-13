@@ -13,9 +13,9 @@ from prompt_manager import PromptManager
 from prompt_manager.core.models import (
     Prompt,
     PromptFormat,
+    PromptMetadata,
     PromptStatus,
     PromptTemplate,
-    PromptMetadata,
 )
 from prompt_manager.exceptions import PromptNotFoundError
 
@@ -57,7 +57,7 @@ class TestSyncUserScenarios:
         # Update prompt
         current_prompt = file_manager.get_prompt(test_prompts[0].id)
         updated_current_prompt = current_prompt.model_copy(update={
-            "template": current_prompt.template.model_copy(update={"content": f"Script updated"})
+            "template": current_prompt.template.model_copy(update={"content": "Script updated"})
         })
         updated = file_manager.update_prompt(updated_current_prompt, changelog="Script update")
         assert updated.version == "1.0.1"
@@ -313,7 +313,7 @@ Generated on {{date}}
         # Update works
         current_another = file_manager.get_prompt(another.id)
         updated_current_another = current_another.model_copy(update={
-            "template": current_another.template.model_copy(update={"content": f"Updated after errors"})
+            "template": current_another.template.model_copy(update={"content": "Updated after errors"})
         })
         updated = file_manager.update_prompt(updated_current_another, changelog="Update")
         assert updated.version == "1.0.1"
@@ -475,7 +475,7 @@ Generated on {{date}}
         # Script 1 continues
         current_prompt1 = file_manager.get_prompt(prompt1.id)
         updated_current_prompt1 = current_prompt1.model_copy(update={
-            "template": current_prompt1.template.model_copy(update={"content": f"Script 1 update"})
+            "template": current_prompt1.template.model_copy(update={"content": "Script 1 update"})
         })
         updated1 = file_manager.update_prompt(updated_current_prompt1, changelog="Script 1 update")
 

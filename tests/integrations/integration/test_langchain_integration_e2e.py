@@ -1,16 +1,17 @@
 """End-to-end integration tests for LangChain integration."""
 
 import pytest
+
 from prompt_manager.core.models import (
+    ChatPromptTemplate,
+    Message,
     Prompt,
     PromptFormat,
     PromptTemplate,
-    ChatPromptTemplate,
-    Message,
     Role,
 )
 from prompt_manager.core.template import TemplateEngine
-from prompt_manager.integrations.langchain import LangChainIntegration, LANGCHAIN_AVAILABLE
+from prompt_manager.integrations.langchain import LANGCHAIN_AVAILABLE, LangChainIntegration
 
 
 @pytest.fixture

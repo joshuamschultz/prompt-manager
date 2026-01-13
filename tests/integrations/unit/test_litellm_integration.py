@@ -1,7 +1,8 @@
 """Unit tests for LiteLLM integration."""
 
-import pytest
 from unittest.mock import AsyncMock
+
+import pytest
 
 from prompt_manager.core.models import (
     ChatPromptTemplate,

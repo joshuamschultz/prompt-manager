@@ -1,9 +1,9 @@
 """Test that example code imports and runs without errors."""
 
-import pytest
 import importlib.util
 from pathlib import Path
 
+import pytest
 
 EXAMPLES_DIR = Path(__file__).parent.parent.parent.parent / "examples" / "integrations"
 
@@ -36,7 +36,7 @@ def test_example_imports(example_file):
         raise
 
 
-@pytest.mark.integration  
+@pytest.mark.integration
 def test_examples_directory_exists():
     """Test that examples directory exists."""
     assert EXAMPLES_DIR.exists()

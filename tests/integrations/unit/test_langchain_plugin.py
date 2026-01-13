@@ -1,7 +1,8 @@
 """Unit tests for LangChain plugin."""
 
-import pytest
 from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 
 from prompt_manager.core.models import (
     ChatPromptTemplate,
@@ -12,7 +13,7 @@ from prompt_manager.core.models import (
     PromptTemplate,
     Role,
 )
-from prompt_manager.exceptions import IntegrationNotAvailableError, PluginError
+from prompt_manager.exceptions import PluginError
 from prompt_manager.plugins.langchain_plugin import LangChainPlugin
 
 
@@ -346,8 +347,8 @@ class TestLangChainPlugin:
     ) -> None:
         """Test rendering multiple different format prompts."""
         # Arrange
-        from langchain_core.prompts import PromptTemplate as LCPromptTemplate
         from langchain_core.prompts import ChatPromptTemplate as LCChatPromptTemplate
+        from langchain_core.prompts import PromptTemplate as LCPromptTemplate
         plugin.initialize({})
 
         # Act

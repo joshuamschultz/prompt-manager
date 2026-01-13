@@ -4,7 +4,6 @@ Tests for schema validation system.
 Comprehensive test suite for YAML schema validation functionality.
 """
 
-import tempfile
 from pathlib import Path
 
 import pytest

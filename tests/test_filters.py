@@ -5,7 +5,7 @@ Note: Prompt Manager uses Handlebars templates, not Jinja2.
 Handlebars doesn't have built-in filters like Jinja2.
 """
 
-from prompt_manager.core.models import Prompt, PromptTemplate, PromptFormat, PromptStatus
+from prompt_manager.core.models import Prompt, PromptFormat, PromptStatus, PromptTemplate
 
 # Create a prompt programmatically
 prompt = Prompt(

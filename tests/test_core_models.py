@@ -4,13 +4,13 @@ import pytest
 from pydantic import ValidationError
 
 from prompt_manager.core.models import (
+    ChatPromptTemplate,
     Message,
     Prompt,
     PromptFormat,
     PromptMetadata,
     PromptStatus,
     PromptTemplate,
-    ChatPromptTemplate,
     Role,
 )
 

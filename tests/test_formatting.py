@@ -5,7 +5,7 @@ Since Handlebars doesn't have Jinja2-style filters, format your data
 in Python before passing it to the template.
 """
 
-from prompt_manager.core.models import Prompt, PromptTemplate, PromptFormat
+from prompt_manager.core.models import Prompt, PromptFormat, PromptTemplate
 
 # Create a prompt
 prompt = Prompt(

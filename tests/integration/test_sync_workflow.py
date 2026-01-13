@@ -9,7 +9,11 @@ from pathlib import Path
 import pytest
 
 from prompt_manager import PromptManager
-from prompt_manager.core.models import Prompt, PromptFormat, PromptStatus, PromptTemplate, PromptMetadata
+from prompt_manager.core.models import (
+    Prompt,
+    PromptFormat,
+    PromptStatus,
+)
 from prompt_manager.core.registry import PromptRegistry
 from prompt_manager.exceptions import PromptNotFoundError
 from prompt_manager.versioning.store import VersionStore
@@ -88,8 +92,8 @@ class TestSyncWorkflow:
         for prompt in updated_prompts:
             v1_file = prompt_dir / prompt.id / "_versions" / "1.0.0.yaml"
             v2_file = prompt_dir / prompt.id / "_versions" / "1.0.1.yaml"
-            assert v1_file.exists(), f"Version 1.0.0 file should exist"
-            assert v2_file.exists(), f"Version 1.0.1 file should exist"
+            assert v1_file.exists(), "Version 1.0.0 file should exist"
+            assert v2_file.exists(), "Version 1.0.1 file should exist"
 
         # Delete 3 prompts
         for prompt in created_prompts[:3]:

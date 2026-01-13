@@ -1,7 +1,7 @@
 """Unit tests for LangChain integration."""
 
+
 import pytest
-from unittest.mock import AsyncMock, Mock
 
 from prompt_manager.core.models import (
     ChatPromptTemplate,
@@ -15,10 +15,9 @@ from prompt_manager.core.models import (
 from prompt_manager.core.template import TemplateEngine
 from prompt_manager.exceptions import ConversionError, IntegrationNotAvailableError
 from prompt_manager.integrations.langchain import (
-    LangChainIntegration,
     LANGCHAIN_AVAILABLE,
+    LangChainIntegration,
 )
-
 
 # Skip all tests if LangChain is not available
 pytestmark = pytest.mark.skipif(

@@ -1,6 +1,7 @@
 """End-to-end tests for plugin discovery and registration."""
 
 import pytest
+
 from prompt_manager.plugins.registry import PluginRegistry
 
 
@@ -25,8 +26,8 @@ class TestPluginDiscoveryE2E:
     @pytest.mark.integration
     def test_plugin_provides_integration(self):
         """Test that plugin provides integration functionality."""
-        from prompt_manager.plugins.openai_plugin import OpenAIPlugin
         from prompt_manager.core.models import Prompt, PromptFormat, PromptTemplate
+        from prompt_manager.plugins.openai_plugin import OpenAIPlugin
 
         plugin = OpenAIPlugin()
         plugin.initialize({})

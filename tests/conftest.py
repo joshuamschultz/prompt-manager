@@ -7,13 +7,13 @@ import pytest
 
 from prompt_manager.core.manager import PromptManager
 from prompt_manager.core.models import (
+    ChatPromptTemplate,
     Message,
     Prompt,
     PromptFormat,
     PromptMetadata,
     PromptStatus,
     PromptTemplate,
-    ChatPromptTemplate,
     Role,
 )
 from prompt_manager.core.registry import PromptRegistry

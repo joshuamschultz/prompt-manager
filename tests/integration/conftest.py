@@ -1,6 +1,5 @@
 """Shared fixtures for integration tests."""
 
-import asyncio
 from pathlib import Path
 from typing import Any
 
@@ -8,13 +7,13 @@ import pytest
 
 from prompt_manager import PromptManager
 from prompt_manager.core.models import (
+    ChatPromptTemplate,
     Message,
     Prompt,
     PromptFormat,
     PromptMetadata,
     PromptStatus,
     PromptTemplate,
-    ChatPromptTemplate,
     Role,
 )
 from prompt_manager.core.registry import PromptRegistry
